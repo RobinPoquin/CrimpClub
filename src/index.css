@@ -51,14 +51,26 @@
 
 /* ── Reset ───────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body, #root { height: 100%; }
+
+html {
+  height: 100%;
+  overflow: hidden;
+}
 
 body {
+  height: 100%;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background: var(--bg);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   transition: background .2s, color .2s;
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── App shell ───────────────────────────────── */
@@ -66,24 +78,37 @@ body {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
+  width: 100%;
   max-width: 480px;
   margin: 0 auto;
   background: var(--bg);
   position: relative;
+  padding-top: env(safe-area-inset-top);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  overflow: hidden;
 }
 
 @media (min-width: 768px) {
   body { background: var(--border); }
   .app-shell {
-    height: calc(100vh - 40px);
+    height: calc(100dvh - 40px);
     margin-top: 20px;
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: var(--shadow-md);
+    padding-top: 0;
   }
 }
 
-.app-content { flex: 1; overflow-y: auto; overscroll-behavior: contain; }
+.app-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
 
 /* ── Topbar ──────────────────────────────────── */
 .topbar {
@@ -136,9 +161,9 @@ body {
   display: flex;
   border-top: 1px solid var(--border);
   background: var(--bg-nav);
-  padding-bottom: env(safe-area-inset-bottom);
-  position: sticky;
-  bottom: 0;
+  /* Home indicator iOS */
+  padding-bottom: env(safe-area-inset-bottom, 8px);
+  flex-shrink: 0;
 }
 .nav-btn {
   flex: 1;
@@ -669,7 +694,9 @@ textarea { resize: vertical; }
   max-width: 480px;
   background: var(--bg-card);
   border-radius: 20px 20px 0 0;
-  padding: 12px 20px 36px;
+  padding: 12px 20px;
+  /* Home indicator iOS */
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   z-index: 101;
   animation: slideUp .22s cubic-bezier(.32,1,.23,1);
   border-top: 1px solid var(--border);
