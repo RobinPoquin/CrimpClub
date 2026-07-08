@@ -1,0 +1,58 @@
+import { supabase } from "./supabase";
+
+export async function getAscents(userId) {
+  const { data, error } = await supabase
+    .from("ascents")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false });
+  if (error) throw new Error(error.message);
+  // Normalise les noms de champs snake_case → camelCase pour le front
+  return (data || []).map(normalise);
+}
+
+export async function addAscent(userId, form) {
+  const { data, error } = await supabase
+    .from("ascents")
+    .insert({
+      user_id:       userId,
+      route_name:    form.routeName || null,
+      grade:         form.grade,
+      type:          form.type,
+      result:        form.result,
+      is_outdoor:    form.outdoor,
+      location_name: form.location || null,
+      date:          form.date,
+      comment:       form.comment || null,
+      photo_urls:    [],
+      video_urls:    [],
+    })
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return normalise(data);
+}
+
+export async function deleteAscent(id) {
+  const { error } = await supabase.from("ascents").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+// snake_case → camelCase pour correspondre aux composants React existants
+function normalise(a) {
+  return {
+    id:         a.id,
+    userId:     a.user_id,
+    routeName:  a.route_name,
+    grade:      a.grade,
+    type:       a.type,
+    result:     a.result,
+    outdoor:    a.is_outdoor,
+    location:   a.location_name,
+    date:       a.date,
+    comment:    a.comment,
+    photoUrls:  a.photo_urls || [],
+    videoUrls:  a.video_urls || [],
+    createdAt:  a.created_at,
+  };
+}
