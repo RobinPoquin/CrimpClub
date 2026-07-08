@@ -64,7 +64,7 @@ export default function ProfilePage({ user, ascents, onSignOut }) {
         </button>
       </div>
 
-      <div className="version-note">CrimpClub v1.0 — MVP</div>
+      <div className="version-note">CrimpClup v1.0 — MVP</div>
     </div>
   );
 }

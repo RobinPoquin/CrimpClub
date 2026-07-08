@@ -3,7 +3,7 @@ import AscentCard from "../components/AscentCard";
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie", "SAE"];
 
-export default function LogbookPage({ ascents, onAdd }) {
+export default function LogbookPage({ ascents, onAdd, onEdit, onDelete }) {
   const [filter, setFilter] = useState("Tous");
   const [search, setSearch] = useState("");
 
@@ -21,9 +21,7 @@ export default function LogbookPage({ ascents, onAdd }) {
     <div className="page">
       <div className="page-header">
         <h1>Mon logbook</h1>
-        <button className="btn-icon" onClick={onAdd} aria-label="Ajouter une ascension">
-          ＋
-        </button>
+        <button className="btn-icon" onClick={onAdd} aria-label="Ajouter une ascension">＋</button>
       </div>
 
       <div className="search-bar">
@@ -38,11 +36,7 @@ export default function LogbookPage({ ascents, onAdd }) {
 
       <div className="filter-chips">
         {TYPE_FILTERS.map((f) => (
-          <button
-            key={f}
-            className={`chip ${filter === f ? "chip-active" : ""}`}
-            onClick={() => setFilter(f)}
-          >
+          <button key={f} className={`chip ${filter === f ? "chip-active" : ""}`} onClick={() => setFilter(f)}>
             {f}
           </button>
         ))}
@@ -53,20 +47,14 @@ export default function LogbookPage({ ascents, onAdd }) {
           <p className="empty-icon">🧗</p>
           <p className="empty-title">Aucune ascension ici.</p>
           <p className="empty-sub">
-            {ascents.length === 0
-              ? "Enregistre ta première voie pour commencer."
-              : "Essaie un autre filtre."}
+            {ascents.length === 0 ? "Enregistre ta première voie pour commencer." : "Essaie un autre filtre."}
           </p>
-          {ascents.length === 0 && (
-            <button className="btn-primary" onClick={onAdd}>
-              Ajouter une ascension
-            </button>
-          )}
+          {ascents.length === 0 && <button className="btn-primary" onClick={onAdd}>Ajouter une ascension</button>}
         </div>
       ) : (
         <div className="ascents-list">
           {filtered.map((a) => (
-            <AscentCard key={a.id} ascent={a} />
+            <AscentCard key={a.id} ascent={a} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       )}

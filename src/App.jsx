@@ -5,7 +5,7 @@ import AddAscentPage from "./pages/AddAscentPage";
 import StatsPage from "./pages/StatsPage";
 import ProfilePage from "./pages/ProfilePage";
 import { getCurrentUser, signOut } from "./lib/auth";
-import { getAscents } from "./lib/db";
+import { getAscents, deleteAscent } from "./lib/db";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -15,10 +15,17 @@ const TABS = [
 ];
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser]         = useState(null);
   const [activeTab, setActiveTab] = useState("logbook");
-  const [ascents, setAscents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [ascents, setAscents]   = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [editAscent, setEditAscent] = useState(null); // ascension en cours d'édition
+  const [theme, setTheme]       = useState(() => localStorage.getItem("cc_theme") || "light");
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("cc_theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     getCurrentUser().then((u) => {
@@ -45,25 +52,88 @@ export default function App() {
     setAscents([]);
   }
 
-  function handleAscentAdded() {
+  function handleAscentSaved() {
     loadAscents(user.id);
+    setEditAscent(null);
     setActiveTab("logbook");
   }
 
+  function handleEdit(ascent) {
+    setEditAscent(ascent);
+    setActiveTab("add");
+  }
+
+  function handleCancelForm() {
+    setEditAscent(null);
+    setActiveTab("logbook");
+  }
+
+  async function handleDelete(id) {
+    await deleteAscent(id);
+    loadAscents(user.id);
+  }
+
   if (loading) return <div className="loading">Chargement…</div>;
-  if (!user)   return <AuthPage onLogin={handleLogin} />;
+  if (!user)   return (
+    <AuthPage
+      onLogin={handleLogin}
+      theme={theme}
+      onToggleTheme={() => setTheme(t => t === "light" ? "dark" : "light")}
+    />
+  );
+
+  const showForm = activeTab === "add";
 
   return (
     <div className="app-shell">
+      <header className="topbar">
+        <div className="topbar-brand">
+          <div className="topbar-logo">🧗</div>
+          <span className="topbar-name">CrimpClub</span>
+        </div>
+        <div className="topbar-actions">
+          <button
+            className="theme-btn"
+            onClick={() => setTheme(t => t === "light" ? "dark" : "light")}
+            aria-label="Basculer le thème"
+          >
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
+        </div>
+      </header>
+
       <main className="app-content">
-        {activeTab === "logbook"  && <LogbookPage ascents={ascents} onAdd={() => setActiveTab("add")} />}
-        {activeTab === "add"      && <AddAscentPage userId={user.id} onSaved={handleAscentAdded} onCancel={() => setActiveTab("logbook")} />}
-        {activeTab === "stats"    && <StatsPage ascents={ascents} />}
-        {activeTab === "profile"  && <ProfilePage user={user} ascents={ascents} onSignOut={handleSignOut} />}
+        {activeTab === "logbook" && (
+          <LogbookPage
+            ascents={ascents}
+            onAdd={() => { setEditAscent(null); setActiveTab("add"); }}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        )}
+        {showForm && (
+          <AddAscentPage
+            userId={user.id}
+            onSaved={handleAscentSaved}
+            onCancel={handleCancelForm}
+            editAscent={editAscent}
+          />
+        )}
+        {activeTab === "stats"   && <StatsPage ascents={ascents} />}
+        {activeTab === "profile" && <ProfilePage user={user} ascents={ascents} onSignOut={handleSignOut} />}
       </main>
+
       <nav className="bottom-nav">
         {TABS.map((t) => (
-          <button key={t.id} className={`nav-btn ${activeTab === t.id ? "active" : ""}`} onClick={() => setActiveTab(t.id)} aria-label={t.label}>
+          <button
+            key={t.id}
+            className={`nav-btn ${activeTab === t.id ? "active" : ""}`}
+            onClick={() => {
+              if (t.id === "add") { setEditAscent(null); }
+              setActiveTab(t.id);
+            }}
+            aria-label={t.label}
+          >
             <span className="nav-icon">{t.icon}</span>
             <span className="nav-label">{t.label}</span>
           </button>

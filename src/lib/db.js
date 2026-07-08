@@ -33,6 +33,26 @@ export async function addAscent(userId, form) {
   return normalise(data);
 }
 
+export async function updateAscent(id, form) {
+  const { data, error } = await supabase
+    .from("ascents")
+    .update({
+      route_name:    form.routeName || null,
+      grade:         form.grade,
+      type:          form.type,
+      result:        form.result,
+      is_outdoor:    form.outdoor,
+      location_name: form.location || null,
+      date:          form.date,
+      comment:       form.comment || null,
+    })
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+  return normalise(data);
+}
+
 export async function deleteAscent(id) {
   const { error } = await supabase.from("ascents").delete().eq("id", id);
   if (error) throw new Error(error.message);
