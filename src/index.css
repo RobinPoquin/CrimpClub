@@ -1099,3 +1099,65 @@ textarea { resize: vertical; }
 [data-theme="dark"] .auth-header-logo-img {
   filter: invert(1);
 }
+
+/* ── Color editor row — 2 lignes ─────────────── */
+.color-editor-row {
+  background: var(--bg-input);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.color-row-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.color-row-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 24px; /* aligne sous le nom */
+}
+
+.color-hint-input-full {
+  flex: 1;
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  color: var(--text-secondary) !important;
+}
+
+/* ── Color level legend ──────────────────────── */
+.color-level-legend {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.color-level-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.color-level-dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Card color level badge ──────────────────── */
+.card-color-level {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sheet-level-badge {
+  font-size: 14px;
+  font-weight: 700;
+  margin-left: 4px;
+}

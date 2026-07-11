@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ascentToColorLevel, COLOR_LEVELS } from "../lib/gradePoints";
 
 const RESULT_MAP = {
   "À vue":     { bar: "bar-vue",    badge: "result-vue",    label: "À vue" },
@@ -7,14 +8,17 @@ const RESULT_MAP = {
   "Projet":    { bar: "bar-projet", badge: "result-projet", label: "Projet" },
 };
 
-export default function AscentCard({ ascent, onEdit, onDelete }) {
-  const [menuOpen, setMenuOpen]       = useState(false);
+export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
+  const [menuOpen, setMenuOpen]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const { grade, type, date, outdoor, routeName, location, result, comment, colorHex, colorName, gradeHint } = ascent;
-  const res = RESULT_MAP[result] || { bar: "bar-worked", badge: "result-worked", label: result };
-
+  const res      = RESULT_MAP[result] || { bar: "bar-worked", badge: "result-worked", label: result };
   const hasColor = !outdoor && type === "Bloc" && colorHex;
+
+  // Niveau normalisé N1-N6 pour les blocs couleur
+  const colorLevelId = hasColor ? ascentToColorLevel(ascent, gyms) : null;
+  const colorLevel   = colorLevelId ? COLOR_LEVELS[colorLevelId - 1] : null;
 
   const formattedDate = date
     ? new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
@@ -29,7 +33,6 @@ export default function AscentCard({ ascent, onEdit, onDelete }) {
   return (
     <>
       <article className="ascent-card">
-        {/* Barre latérale : couleur du bloc OU couleur du résultat */}
         <div
           className={`card-accent-bar ${hasColor ? "" : res.bar}`}
           style={hasColor ? { background: colorHex } : {}}
@@ -39,11 +42,10 @@ export default function AscentCard({ ascent, onEdit, onDelete }) {
           <div className="card-top">
             <div className="card-grade-block">
               {hasColor ? (
-                /* Pastille couleur + nom */
                 <div className="card-color-grade">
                   <span className="card-color-dot" style={{ background: colorHex }} />
                   <span className="card-grade card-grade-color">{colorName}</span>
-                  {gradeHint && <span className="card-grade-hint">~{gradeHint}</span>}
+                  {gradeHint && <span className="card-grade-hint">{gradeHint}</span>}
                 </div>
               ) : (
                 <span className="card-grade">{grade}</span>
@@ -64,6 +66,12 @@ export default function AscentCard({ ascent, onEdit, onDelete }) {
           <div className="card-meta">
             {location && <span>📍 {location}</span>}
             {formattedDate && <span>🗓 {formattedDate}</span>}
+            {/* Niveau normalisé affiché uniquement pour les blocs couleur */}
+            {colorLevel && (
+              <span className="card-color-level" style={{ color: colorLevel.color }}>
+                📊 {colorLevel.short} · {colorLevel.label.split(" — ")[1]}
+              </span>
+            )}
           </div>
 
           {comment && <p className="card-comment">"{comment}"</p>}
@@ -77,7 +85,11 @@ export default function AscentCard({ ascent, onEdit, onDelete }) {
             <div className="sheet-handle" />
             <div className="sheet-header">
               {hasColor
-                ? <><span className="card-color-dot" style={{ background: colorHex, width: 20, height: 20 }} /><span className="sheet-name">{colorName}{gradeHint ? ` (~${gradeHint})` : ""}</span></>
+                ? <>
+                    <span className="card-color-dot" style={{ background: colorHex, width: 20, height: 20 }} />
+                    <span className="sheet-name">{colorName}</span>
+                    {colorLevel && <span className="sheet-level-badge" style={{ color: colorLevel.color }}>· {colorLevel.short}</span>}
+                  </>
                 : <><span className="sheet-grade">{grade}</span><span className="sheet-name">{routeName || type}</span></>
               }
             </div>

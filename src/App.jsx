@@ -129,6 +129,7 @@ export default function App() {
         {activeTab === "logbook" && (
           <LogbookPage
             ascents={ascents}
+            gyms={gyms}
             onAdd={() => { setEditAscent(null); setActiveTab("add"); }}
             onEdit={handleEdit}
             onDelete={handleDelete}

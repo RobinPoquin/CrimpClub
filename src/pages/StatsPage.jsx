@@ -1,5 +1,5 @@
 import ProgressionChart from "../components/ProgressionChart";
-import { ascentToPoints, ascentDisplayGrade } from "../lib/gradePoints";
+import { ascentToPoints, ascentToColorLevel, COLOR_LEVELS, ascentDisplayGrade } from "../lib/gradePoints";
 
 const ORDER_ROUTE = [
   "3","3+","4","4+","5a","5b","5c",
@@ -22,7 +22,7 @@ export default function StatsPage({ ascents, gyms = [] }) {
   const thisMonth  = new Date().toISOString().slice(0, 7);
   const monthCount = ascents.filter(a => a.date?.startsWith(thisMonth)).length;
 
-  // Niveau max — prend en compte gradeHint pour les couleurs
+  // Niveau max (voies cotées)
   const gradedDone = done.filter(a => ascentToPoints(a) !== null);
   const maxAscent  = gradedDone.reduce((best, a) => {
     const p = ascentToPoints(a);
@@ -30,26 +30,29 @@ export default function StatsPage({ ascents, gyms = [] }) {
   }, gradedDone[0]);
   const maxGrade = maxAscent ? ascentDisplayGrade(maxAscent).label : "--";
 
-  // Pyramide — regroupe par label d'affichage
-  const gradeCounts = {}; // { label: { count, isColor, hex } }
-  done.forEach(a => {
-    const { label, isColor, hex } = ascentDisplayGrade(a);
-    if (!gradeCounts[label]) gradeCounts[label] = { count: 0, isColor, hex };
-    gradeCounts[label].count++;
+  // ── Pyramide voies cotées ──────────────────────
+  const gradeCounts = {};
+  // Exclure les blocs couleur (ils ont leur propre pyramide)
+  done.filter(a => ascentToPoints(a) !== null && !a.colorId).forEach(a => {
+    const { label } = ascentDisplayGrade(a);
+    gradeCounts[label] = (gradeCounts[label] || 0) + 1;
   });
+  const pyramidRoute = Object.entries(gradeCounts)
+    .sort(([a], [b]) => ORDER.indexOf(b) - ORDER.indexOf(a))
+    .slice(0, 8);
+  const maxRouteCount = Math.max(...pyramidRoute.map(([, c]) => c), 1);
 
-  // Trie : les cotations connues par ORDER, les couleurs pures à la fin
-  const pyramidEntries = Object.entries(gradeCounts)
-    .sort(([a, va], [b, vb]) => {
-      const ia = ORDER.indexOf(a);
-      const ib = ORDER.indexOf(b);
-      if (ia === -1 && ib === -1) return vb.count - va.count;
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ib - ia;
-    })
-    .slice(0, 10);
-  const maxCount = Math.max(...pyramidEntries.map(([, v]) => v.count), 1);
+  // ── Pyramide blocs couleur — 6 niveaux normalisés ──
+  const colorLevelCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+  let hasColorAscents = false;
+  done.forEach(a => {
+    const lvl = ascentToColorLevel(a, gyms);
+    if (lvl !== null) {
+      colorLevelCounts[lvl]++;
+      hasColorAscents = true;
+    }
+  });
+  const maxColorCount = Math.max(...Object.values(colorLevelCounts), 1);
 
   // Types
   const typeCounts = {};
@@ -87,34 +90,63 @@ export default function StatsPage({ ascents, gyms = [] }) {
 
       <ProgressionChart ascents={ascents} gyms={gyms} />
 
-      {/* Pyramide */}
-      {pyramidEntries.length > 0 && (
+      {/* ── Pyramide voies cotées ── */}
+      {pyramidRoute.length > 0 && (
         <section className="stats-section">
-          <h2>Pyramide</h2>
+          <h2>Pyramide — Voies cotées</h2>
           <div className="pyramid">
-            {pyramidEntries.map(([label, { count, isColor, hex }]) => (
+            {pyramidRoute.map(([label, count]) => (
               <div key={label} className="pyr-row">
-                {isColor ? (
-                  <span className="pyr-color-dot" style={{ background: hex }} title={label} />
-                ) : (
-                  <span className="pyr-grade">{label}</span>
-                )}
+                <span className="pyr-grade">{label}</span>
                 <div className="pyr-bar-wrap">
-                  <div
-                    className="pyr-bar"
-                    style={{
-                      width: `${(count / maxCount) * 100}%`,
-                      background: isColor ? hex : undefined,
-                    }}
-                  />
+                  <div className="pyr-bar" style={{ width: `${(count / maxRouteCount) * 100}%` }} />
                 </div>
                 <span className="pyr-count">{count}</span>
               </div>
             ))}
           </div>
-          {done.some(a => ascentToPoints(a) === null && !a.gradeHint) && (
-            <p className="pyr-hint">💡 Ajoute une cotation indicative à tes couleurs dans <strong>Profil → Mes salles</strong> pour les inclure dans la courbe de progression.</p>
-          )}
+        </section>
+      )}
+
+      {/* ── Pyramide blocs couleur — 6 niveaux normalisés ── */}
+      {hasColorAscents && (
+        <section className="stats-section">
+          <h2>Pyramide — Blocs couleur</h2>
+          <p className="pyr-hint" style={{ marginBottom: 12 }}>
+            Niveaux normalisés sur 6 tranches, comparables entre toutes les salles.
+          </p>
+          <div className="pyramid">
+            {[...COLOR_LEVELS].reverse().map(lvl => {
+              const count = colorLevelCounts[lvl.id] || 0;
+              return (
+                <div key={lvl.id} className="pyr-row">
+                  <span className="pyr-grade" style={{ color: lvl.color, fontWeight: 700 }}>
+                    {lvl.short}
+                  </span>
+                  <div className="pyr-bar-wrap">
+                    <div
+                      className="pyr-bar"
+                      style={{
+                        width: `${(count / maxColorCount) * 100}%`,
+                        background: lvl.color,
+                        opacity: count === 0 ? 0.15 : 1,
+                      }}
+                    />
+                  </div>
+                  <span className="pyr-count">{count || "—"}</span>
+                </div>
+              );
+            })}
+          </div>
+          {/* Légende */}
+          <div className="color-level-legend">
+            {COLOR_LEVELS.map(lvl => (
+              <div key={lvl.id} className="color-level-item">
+                <span className="color-level-dot" style={{ background: lvl.color }} />
+                <span>{lvl.label}</span>
+              </div>
+            ))}
+          </div>
         </section>
       )}
 

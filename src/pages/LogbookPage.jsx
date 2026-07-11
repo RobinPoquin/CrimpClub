@@ -3,7 +3,7 @@ import AscentCard from "../components/AscentCard";
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie", "SAE"];
 
-export default function LogbookPage({ ascents, onAdd, onEdit, onDelete }) {
+export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelete }) {
   const [filter, setFilter] = useState("Tous");
   const [search, setSearch] = useState("");
 
@@ -54,7 +54,7 @@ export default function LogbookPage({ ascents, onAdd, onEdit, onDelete }) {
       ) : (
         <div className="ascents-list">
           {filtered.map((a) => (
-            <AscentCard key={a.id} ascent={a} onEdit={onEdit} onDelete={onDelete} />
+            <AscentCard key={a.id} ascent={a} gyms={gyms} onEdit={onEdit} onDelete={onDelete} />
           ))}
         </div>
       )}
