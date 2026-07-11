@@ -45,7 +45,7 @@ export default function AuthPage({ onLogin, theme, onToggleTheme }) {
 
       <div className="auth-card">
         <div className="auth-header">
-          <div className="auth-header-logo">🧗</div>
+          <img src="/logo.png" alt="CrimpClub" className="auth-header-logo-img" />
           <h1>Crimp<span>Club</span></h1>
           <p>{mode === "login" ? "Content de te revoir 👋" : "Crée ton logbook gratuitement."}</p>
         </div>

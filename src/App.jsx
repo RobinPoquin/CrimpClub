@@ -4,8 +4,10 @@ import LogbookPage from "./pages/LogbookPage";
 import AddAscentPage from "./pages/AddAscentPage";
 import StatsPage from "./pages/StatsPage";
 import ProfilePage from "./pages/ProfilePage";
+import GymManagerPage from "./pages/GymManagerPage";
 import { getCurrentUser, signOut } from "./lib/auth";
 import { getAscents, deleteAscent } from "./lib/db";
+import { getGyms } from "./lib/gyms";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -15,12 +17,14 @@ const TABS = [
 ];
 
 export default function App() {
-  const [user, setUser]         = useState(null);
-  const [activeTab, setActiveTab] = useState("logbook");
-  const [ascents, setAscents]   = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [editAscent, setEditAscent] = useState(null); // ascension en cours d'édition
-  const [theme, setTheme]       = useState(() => localStorage.getItem("cc_theme") || "light");
+  const [user, setUser]             = useState(null);
+  const [activeTab, setActiveTab]   = useState("logbook");
+  const [subPage, setSubPage]       = useState(null); // "gyms" | null
+  const [ascents, setAscents]       = useState([]);
+  const [gyms, setGyms]             = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [editAscent, setEditAscent] = useState(null);
+  const [theme, setTheme]           = useState(() => localStorage.getItem("cc_theme") || "light");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -30,7 +34,7 @@ export default function App() {
   useEffect(() => {
     getCurrentUser().then((u) => {
       setUser(u);
-      if (u) loadAscents(u.id);
+      if (u) { loadAscents(u.id); loadGyms(u.id); }
       setLoading(false);
     });
   }, []);
@@ -40,9 +44,15 @@ export default function App() {
     setAscents(data);
   }
 
+  async function loadGyms(userId) {
+    const data = await getGyms(userId);
+    setGyms(data);
+  }
+
   function handleLogin(u) {
     setUser(u);
     loadAscents(u.id);
+    loadGyms(u.id);
     setActiveTab("logbook");
   }
 
@@ -50,6 +60,7 @@ export default function App() {
     await signOut();
     setUser(null);
     setAscents([]);
+    setGyms([]);
   }
 
   function handleAscentSaved() {
@@ -74,7 +85,7 @@ export default function App() {
   }
 
   if (loading) return <div className="loading">Chargement…</div>;
-  if (!user)   return (
+  if (!user) return (
     <AuthPage
       onLogin={handleLogin}
       theme={theme}
@@ -82,13 +93,25 @@ export default function App() {
     />
   );
 
-  const showForm = activeTab === "add";
+  // Sous-page Mes salles (par-dessus le profil)
+  if (subPage === "gyms") return (
+    <div className="app-shell">
+      <main className="app-content">
+        <GymManagerPage
+          userId={user.id}
+          gyms={gyms}
+          onGymsChanged={() => loadGyms(user.id)}
+          onBack={() => setSubPage(null)}
+        />
+      </main>
+    </div>
+  );
 
   return (
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-brand">
-          <div className="topbar-logo">🧗</div>
+          <img src="/logo.png" alt="CrimpClub" className="topbar-logo-img" />
           <span className="topbar-name">CrimpClub</span>
         </div>
         <div className="topbar-actions">
@@ -111,16 +134,25 @@ export default function App() {
             onDelete={handleDelete}
           />
         )}
-        {showForm && (
+        {activeTab === "add" && (
           <AddAscentPage
             userId={user.id}
+            gyms={gyms}
             onSaved={handleAscentSaved}
             onCancel={handleCancelForm}
             editAscent={editAscent}
           />
         )}
-        {activeTab === "stats"   && <StatsPage ascents={ascents} />}
-        {activeTab === "profile" && <ProfilePage user={user} ascents={ascents} onSignOut={handleSignOut} />}
+        {activeTab === "stats"   && <StatsPage ascents={ascents} gyms={gyms} />}
+        {activeTab === "profile" && (
+          <ProfilePage
+            user={user}
+            ascents={ascents}
+            gyms={gyms}
+            onSignOut={handleSignOut}
+            onOpenGyms={() => setSubPage("gyms")}
+          />
+        )}
       </main>
 
       <nav className="bottom-nav">
@@ -129,7 +161,7 @@ export default function App() {
             key={t.id}
             className={`nav-btn ${activeTab === t.id ? "active" : ""}`}
             onClick={() => {
-              if (t.id === "add") { setEditAscent(null); }
+              if (t.id === "add") setEditAscent(null);
               setActiveTab(t.id);
             }}
             aria-label={t.label}

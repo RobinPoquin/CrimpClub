@@ -1,4 +1,4 @@
-export default function ProfilePage({ user, ascents, onSignOut }) {
+export default function ProfilePage({ user, ascents, gyms = [], onSignOut, onOpenGyms }) {
   const initials = user.displayName
     ? user.displayName.slice(0, 2).toUpperCase()
     : user.email.slice(0, 2).toUpperCase();
@@ -45,6 +45,13 @@ export default function ProfilePage({ user, ascents, onSignOut }) {
       </div>
 
       <div className="settings-list">
+        <button className="setting-row" onClick={onOpenGyms}>
+          <span>🏟️ Mes salles &amp; couleurs</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="setting-val">{gyms.length} salle{gyms.length !== 1 ? "s" : ""}</span>
+            <span className="chevron">›</span>
+          </div>
+        </button>
         <button className="setting-row" onClick={exportData}>
           <span>⬇️ Exporter mes données</span>
           <span className="chevron">›</span>
@@ -64,7 +71,7 @@ export default function ProfilePage({ user, ascents, onSignOut }) {
         </button>
       </div>
 
-      <div className="version-note">ClimbLog v1.0 — MVP</div>
+      <div className="version-note">CrimpClub v1.0</div>
     </div>
   );
 }
