@@ -1,4 +1,4 @@
-export default function ProfilePage({ user, ascents, gyms = [], onSignOut, onOpenGyms }) {
+export default function ProfilePage({ user, ascents, gyms = [], onSignOut, onOpenGyms, onOpenSettings }) {
   const initials = user.displayName
     ? user.displayName.slice(0, 2).toUpperCase()
     : user.email.slice(0, 2).toUpperCase();
@@ -45,6 +45,10 @@ export default function ProfilePage({ user, ascents, gyms = [], onSignOut, onOpe
       </div>
 
       <div className="settings-list">
+        <button className="setting-row" onClick={onOpenSettings}>
+          <span>⚙️ Paramètres du compte</span>
+          <span className="chevron">›</span>
+        </button>
         <button className="setting-row" onClick={onOpenGyms}>
           <span>🏟️ Mes salles &amp; couleurs</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

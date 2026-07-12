@@ -5,9 +5,12 @@ import AddAscentPage from "./pages/AddAscentPage";
 import StatsPage from "./pages/StatsPage";
 import ProfilePage from "./pages/ProfilePage";
 import GymManagerPage from "./pages/GymManagerPage";
+import SettingsPage from "./pages/SettingsPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import { getCurrentUser, signOut } from "./lib/auth";
 import { getAscents, deleteAscent } from "./lib/db";
 import { getGyms } from "./lib/gyms";
+import { supabase } from "./lib/supabase";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -19,7 +22,7 @@ const TABS = [
 export default function App() {
   const [user, setUser]             = useState(null);
   const [activeTab, setActiveTab]   = useState("logbook");
-  const [subPage, setSubPage]       = useState(null); // "gyms" | null
+  const [subPage, setSubPage]       = useState(null); // "gyms" | "settings" | "reset-password"
   const [ascents, setAscents]       = useState([]);
   const [gyms, setGyms]             = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -32,11 +35,27 @@ export default function App() {
   }, [theme]);
 
   useEffect(() => {
+    // Détecte le lien de reset password dans l'URL
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) {
+      setSubPage("reset-password");
+      setLoading(false);
+      return;
+    }
+
     getCurrentUser().then((u) => {
       setUser(u);
       if (u) { loadAscents(u.id); loadGyms(u.id); }
       setLoading(false);
     });
+
+    // Écoute les changements d'auth (utile pour la récupération de session après reset)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setSubPage("reset-password");
+      }
+    });
+    return () => subscription.unsubscribe();
   }, []);
 
   async function loadAscents(userId) {
@@ -84,7 +103,21 @@ export default function App() {
     loadAscents(user.id);
   }
 
+  function handleUserUpdated(updatedUser) {
+    setUser(updatedUser);
+  }
+
   if (loading) return <div className="loading">Chargement…</div>;
+
+  // Page de réinitialisation de mot de passe (depuis email)
+  if (subPage === "reset-password") return (
+    <ResetPasswordPage onDone={() => {
+      setSubPage(null);
+      window.history.replaceState(null, "", window.location.pathname);
+      getCurrentUser().then(u => { if (u) { setUser(u); loadAscents(u.id); loadGyms(u.id); } });
+    }} />
+  );
+
   if (!user) return (
     <AuthPage
       onLogin={handleLogin}
@@ -93,7 +126,7 @@ export default function App() {
     />
   );
 
-  // Sous-page Mes salles (par-dessus le profil)
+  // Sous-pages (par-dessus le contenu principal)
   if (subPage === "gyms") return (
     <div className="app-shell">
       <main className="app-content">
@@ -102,6 +135,18 @@ export default function App() {
           gyms={gyms}
           onGymsChanged={() => loadGyms(user.id)}
           onBack={() => setSubPage(null)}
+        />
+      </main>
+    </div>
+  );
+
+  if (subPage === "settings") return (
+    <div className="app-shell">
+      <main className="app-content">
+        <SettingsPage
+          user={user}
+          onBack={() => setSubPage(null)}
+          onUserUpdated={handleUserUpdated}
         />
       </main>
     </div>
@@ -152,6 +197,7 @@ export default function App() {
             gyms={gyms}
             onSignOut={handleSignOut}
             onOpenGyms={() => setSubPage("gyms")}
+            onOpenSettings={() => setSubPage("settings")}
           />
         )}
       </main>
