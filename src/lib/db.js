@@ -65,6 +65,25 @@ export async function updateAscent(id, form) {
 }
 
 export async function deleteAscent(id) {
+  // Récupère les médias avant suppression
+  const { data } = await supabase
+    .from("ascents")
+    .select("photo_urls, video_urls")
+    .eq("id", id)
+    .single();
+
+  // Supprime les fichiers Storage
+  if (data) {
+    const paths = [
+      ...(data.photo_urls || []).map(m => (typeof m === "string" ? JSON.parse(m) : m).path),
+      ...(data.video_urls || []).map(m => (typeof m === "string" ? JSON.parse(m) : m).path),
+    ].filter(Boolean);
+
+    if (paths.length > 0) {
+      await supabase.storage.from("media").remove(paths);
+    }
+  }
+
   const { error } = await supabase.from("ascents").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }

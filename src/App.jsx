@@ -47,6 +47,9 @@ export default function App() {
       setUser(u);
       if (u) { loadAscents(u.id); loadGyms(u.id); }
       setLoading(false);
+    }).catch(() => {
+      setUser(null);
+      setLoading(false);
     });
 
     // Écoute les changements d'auth (utile pour la récupération de session après reset)

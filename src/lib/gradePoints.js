@@ -100,6 +100,7 @@ export function topNColorAvg(ascents, gyms, n = 5) {
 // Moyenne top N des points cotation d'un mois (pour la courbe)
 export function topNAverage(ascents, n = 5) {
   const points = ascents
+    .filter(a => !a.colorId)  
     .map(a => ascentToPoints(a))
     .filter(p => p !== null)
     .sort((a, b) => b - a)

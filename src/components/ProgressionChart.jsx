@@ -246,7 +246,7 @@ export default function ProgressionChart({ ascents, gyms = [] }) {
           {gradeDelta !== 0 && (
             <span className={`chart-delta ${gradeDelta > 0 ? "delta-up" : "delta-down"}`}
               title="Évolution voies cotées">
-              🟢 {gradeDelta > 0 ? "▲" : "▼"} {Math.abs(gradeDelta).toFixed(1)}
+              🟢 {gradeDelta > 0 ? "▲" : "▼"} {Math.abs(gradeDelta).toFixed(1)}%
             </span>
           )}
           {colorDelta !== 0 && (
