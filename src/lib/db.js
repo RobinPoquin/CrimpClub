@@ -34,8 +34,8 @@ export async function addAscent(userId, form) {
       color_hex:     form.colorHex || null,
       color_name:    form.colorName || null,
       grade_hint:    form.gradeHint || null,
-      photo_urls:    [],
-      video_urls:    [],
+      photo_urls:    (form.mediaList || []).filter(m => m.type === "photo").map(m => ({ url: m.url, path: m.path })),
+      video_urls:    (form.mediaList || []).filter(m => m.type === "video").map(m => ({ url: m.url, path: m.path })),
     })
     .select()
     .single();
@@ -60,6 +60,8 @@ export async function updateAscent(id, form) {
       color_hex:     form.colorHex || null,
       color_name:    form.colorName || null,
       grade_hint:    form.gradeHint || null,
+      photo_urls:    (form.mediaList || []).filter(m => m.type === "photo").map(m => ({ url: m.url, path: m.path })),
+      video_urls:    (form.mediaList || []).filter(m => m.type === "video").map(m => ({ url: m.url, path: m.path })),
     })
     .eq("id", id)
     .select()
@@ -93,6 +95,16 @@ function normalise(a) {
     gradeHint:  a.grade_hint,
     photoUrls:  a.photo_urls || [],
     videoUrls:  a.video_urls || [],
+    mediaList: [
+      ...(a.photo_urls || []).map(m => {
+        const obj = typeof m === "string" ? JSON.parse(m) : m;
+        return { url: obj.url, path: obj.path, type: "photo" };
+      }),
+      ...(a.video_urls || []).map(m => {
+        const obj = typeof m === "string" ? JSON.parse(m) : m;
+        return { url: obj.url, path: obj.path, type: "video" };
+      }),
+    ],
     createdAt:  a.created_at,
   };
 }

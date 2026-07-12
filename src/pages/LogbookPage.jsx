@@ -1,7 +1,7 @@
 import { useState } from "react";
 import AscentCard from "../components/AscentCard";
 
-const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie", "SAE"];
+const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie"];
 
 export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelete }) {
   const [filter, setFilter] = useState("Tous");

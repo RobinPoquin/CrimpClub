@@ -12,7 +12,7 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
   const [menuOpen, setMenuOpen]           = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const { grade, type, date, outdoor, routeName, location, result, comment, colorHex, colorName, gradeHint } = ascent;
+  const { grade, type, date, outdoor, routeName, location, result, comment, colorHex, colorName, gradeHint, mediaList = [] } = ascent;
   const res      = RESULT_MAP[result] || { bar: "bar-worked", badge: "result-worked", label: result };
   const hasColor = !outdoor && type === "Bloc" && colorHex;
 
@@ -75,6 +75,19 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
           </div>
 
           {comment && <p className="card-comment">"{comment}"</p>}
+
+          {/* Médias */}
+          {mediaList.length > 0 && (
+            <div className="card-media-grid">
+              {mediaList.map((m, i) => (
+                m.type === "photo"
+                  ? <a key={i} href={m.url} target="_blank" rel="noopener noreferrer">
+                      <img src={m.url} alt="" className="card-media-thumb" />
+                    </a>
+                  : <a key={i} href={m.url} target="_blank" rel="noopener noreferrer" className="card-media-thumb card-media-video-link">🎥 Voir la vidéo</a>
+              ))}
+            </div>
+          )}
         </div>
       </article>
 

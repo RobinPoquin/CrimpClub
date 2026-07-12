@@ -15,7 +15,7 @@ export default function ForgotPasswordPage({ onBack }) {
       await sendPasswordReset(email);
       setSent(true);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || JSON.stringify(err) || "Une erreur est survenue.");
     } finally {
       setLoading(false);
     }

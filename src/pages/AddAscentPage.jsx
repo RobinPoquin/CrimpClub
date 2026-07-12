@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { addAscent, updateAscent } from "../lib/db";
+import MediaUploader from "../components/MediaUploader";
 import GymColorPicker from "../components/GymColorPicker";
 
 const GRADES_FRENCH = [
@@ -14,7 +15,7 @@ const GRADES_BLOC = [
   "7A","7A+","7B","7B+","7C","7C+",
   "8A","8A+","8B","8B+","8C","8C+",
 ];
-const TYPES   = ["Bloc","Diff","Trad","Grande voie","SAE","Deep water solo"];
+const TYPES   = ["Bloc","Diff","Trad","Grande voie","Deep water solo"];
 const RESULTS = ["À vue","Flash","Travaillé","Projet"];
 const today   = new Date().toISOString().split("T")[0];
 
@@ -28,6 +29,7 @@ function ascentToForm(a) {
     location:   a.location   || "",
     result:     a.result     || "Travaillé",
     comment:    a.comment    || "",
+    mediaList:  a.mediaList  || [],
     gymId:      a.gymId      || null,
     colorId:    a.colorId    || null,
     colorHex:   a.colorHex   || null,
@@ -202,15 +204,14 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
             value={form.comment} onChange={e => set("comment", e.target.value)} />
         </div>
 
-        {!isEdit && (
-          <div className="field">
-            <label>Photo / vidéo <span className="optional">(optionnel)</span></label>
-            <div className="media-btns">
-              <button type="button" className="btn-media">📷 Photo</button>
-              <button type="button" className="btn-media">🎥 Vidéo</button>
-            </div>
-          </div>
-        )}
+        <div className="field">
+          <label>Photo / vidéo <span className="optional">(optionnel)</span></label>
+          <MediaUploader
+            userId={userId}
+            mediaList={form.mediaList}
+            onChange={list => set("mediaList", list)}
+          />
+        </div>
 
         {error && <p className="error-msg">{error}</p>}
 
