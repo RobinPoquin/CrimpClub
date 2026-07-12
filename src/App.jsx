@@ -72,6 +72,7 @@ export default function App() {
     setUser(u);
     loadAscents(u.id);
     loadGyms(u.id);
+    migrateMediaUrls(); // Migration one-shot
     setActiveTab("logbook");
   }
 

@@ -107,4 +107,28 @@ function normalise(a) {
     ],
     createdAt:  a.created_at,
   };
+
+  export async function migrateMediaUrls() {
+    const { data, error } = await supabase
+      .from("ascents")
+      .select("id, photo_urls, video_urls");
+    if (error) throw new Error(error.message);
+
+    for (const ascent of data || []) {
+      const fix = urls => (urls || []).map(m => {
+        const obj = typeof m === "string" ? JSON.parse(m) : m;
+        // Remplace signed URL par public URL
+        const url = obj.url?.replace(
+          "/object/sign/",
+          "/object/public/"
+        ).split("?")[0]; // Supprime le token expiré
+        return { url, path: obj.path };
+      });
+
+      await supabase.from("ascents").update({
+        photo_urls: fix(ascent.photo_urls),
+        video_urls: fix(ascent.video_urls),
+      }).eq("id", ascent.id);
+    }
+  }
 }
