@@ -54,6 +54,7 @@
 
 html {
   height: 100%;
+  height: -webkit-fill-available;
   overflow: hidden;
 }
 
@@ -65,6 +66,8 @@ body {
   -webkit-font-smoothing: antialiased;
   transition: background .2s, color .2s;
   overflow: hidden;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
 }
 
 #root {
@@ -79,6 +82,7 @@ body {
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  height: -webkit-fill-available;
   width: 100%;
   max-width: 480px;
   margin: 0 auto;
