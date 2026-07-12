@@ -20,6 +20,8 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
   const colorLevelId = hasColor ? ascentToColorLevel(ascent, gyms) : null;
   const colorLevel   = colorLevelId ? COLOR_LEVELS[colorLevelId - 1] : null;
 
+  const [lightbox, setLightbox] = useState(null); // URL photo et vidéo en plein écran
+
   const formattedDate = date
     ? new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
     : "";
@@ -81,10 +83,14 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
             <div className="card-media-grid">
               {mediaList.map((m, i) => (
                 m.type === "photo"
-                  ? <a key={i} href={m.url} target="_blank" rel="noopener noreferrer">
+                  // Ouvre la lightbox au clic
+                  ? <button key={i} type="button" className="card-media-btn" onClick={() => setLightbox({ url: m.url, type: "photo" })}>
                       <img src={m.url} alt="" className="card-media-thumb" />
-                    </a>
-                  : <a key={i} href={m.url} target="_blank" rel="noopener noreferrer" className="card-media-thumb card-media-video-link">🎥 Voir la vidéo</a>
+                    </button>
+                  // Vidéo : ouvre dans un nouvel onglet
+                  : <button key={i} type="button" className="card-media-btn card-media-video-link" onClick={() => setLightbox({ url: m.url, type: "video" })}>
+                    🎥 Voir la vidéo
+                  </button>
               ))}
             </div>
           )}
@@ -117,6 +123,16 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
             <button className="sheet-cancel" onClick={() => { setMenuOpen(false); setConfirmDelete(false); }}>Annuler</button>
           </div>
         </>
+      )}
+      {/* Lightbox plein écran — photo ou vidéo */}
+      {lightbox && (
+        <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
+          <button className="lightbox-close" onClick={() => setLightbox(null)} aria-label="Fermer">✕</button>
+          {lightbox.type === "photo"
+            ? <img src={lightbox.url} alt="" className="lightbox-img" onClick={e => e.stopPropagation()} />
+            : <video src={lightbox.url} className="lightbox-video" controls autoPlay onClick={e => e.stopPropagation()} />
+          }
+        </div>
       )}
     </>
   );
