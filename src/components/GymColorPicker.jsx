@@ -28,7 +28,7 @@ export default function GymColorPicker({ gyms, selectedGymId, selectedColorId, o
               const found = gyms.find(g => g.name === name);
               onGymChange(found ? found.id : null);
             }}
-            locations={gyms.map(g => ({ id: g.id, name: g.name, is_outdoor: false }))}
+            locations={gyms.map(g => ({ id: g.id, name: g.name, is_outdoor: false, logoUrl: g.logoUrl }))}
             placeholder="ex. La Verticale"
             userId={userId}
             gyms={gyms}

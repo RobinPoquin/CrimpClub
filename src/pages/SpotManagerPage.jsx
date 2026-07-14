@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getLocations, saveLocation, deleteLocationByName } from "../lib/locations";
+import AvatarUploader from "../components/AvatarUploader";
 
 export default function SpotManagerPage({ userId, spots = [], onSpotsChanged, onBack }) {
   const [editingSpot, setEditingSpot] = useState(null); // null = liste, object = édition
@@ -38,7 +39,7 @@ export default function SpotManagerPage({ userId, spots = [], onSpotsChanged, on
                 </div>
               </div>
               <div className="gym-row-actions">
-                <button className="btn-sm" onClick={() => setEditingSpot({ ...s, types: s.types || ['bloc', 'diff'] })}>✏️</button>
+                <button className="btn-sm" onClick={() => setEditingSpot({ ...s, types: s.types || ['bloc', 'diff'], logoUrl: s.logo_url })}>✏️</button>
                 <button className="btn-sm btn-sm-danger" onClick={() => setConfirmDelete(s)}>🗑️</button>
               </div>
             </div>
@@ -96,7 +97,7 @@ export default function SpotManagerPage({ userId, spots = [], onSpotsChanged, on
         // Supprime l'ancien puis recrée avec le nouveau nom/types
         await deleteLocationByName(userId, spots.find(s => s.id === editingSpot.id)?.name);
       }
-      await saveLocation(userId, editingSpot.name, true, editingSpot.types);
+      await saveLocation(userId, editingSpot.name, true, editingSpot.types, editingSpot.logoUrl);
       await onSpotsChanged();
       setEditingSpot(null);
     } catch (err) {
@@ -119,6 +120,18 @@ export default function SpotManagerPage({ userId, spots = [], onSpotsChanged, on
           <input type="text" placeholder="ex. Gorges du Verdon"
             value={editingSpot.name}
             onChange={e => { setEditingSpot(s => ({ ...s, name: e.target.value })); setError(""); }} />
+        </div>
+
+        <div className="field">
+          <label>Logo <span className="optional">(optionnel)</span></label>
+          <AvatarUploader
+            userId={userId}
+            currentUrl={editingSpot.logoUrl}
+            folder="logos"
+            size={56}
+            placeholder="🌿"
+            onUploaded={url => setEditingSpot(s => ({ ...s, logoUrl: url }))}
+          />
         </div>
 
         <div className="field">

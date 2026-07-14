@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { addGym, updateGym, deleteGym } from "../lib/gyms";
 import { deleteLocationByName } from "../lib/locations";
+import AvatarUploader from "../components/AvatarUploader";
 
 const DEFAULT_COLORS = [
   { id: "c1", name: "Jaune",  hex: "#FACC15", gradeHint: "" },
@@ -134,9 +135,9 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
     setSaving(true);
     try {
       if (isNew) {
-        await addGym(userId, { name: editingGym.name, colors: editingGym.colors, types: editingGym.types });
+        await addGym(userId, { name: editingGym.name, colors: editingGym.colors, types: editingGym.types, logo_url: editingGym.logoUrl });
       } else {
-        await updateGym(editingGym.id, { name: editingGym.name, colors: editingGym.colors, types: editingGym.types });
+        await updateGym(editingGym.id, { name: editingGym.name, colors: editingGym.colors, types: editingGym.types, logo_url: editingGym.logoUrl });
       }
       await onGymsChanged();
       setEditingGym(null);
@@ -158,6 +159,18 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
         <div className="field">
           <label>Nom de la salle</label>
           <input type="text" placeholder="ex. Arkose Nation" value={editingGym.name} onChange={e => setName(e.target.value)} />
+        </div>
+
+        <div className="field">
+          <label>Logo <span className="optional">(optionnel)</span></label>
+          <AvatarUploader
+            userId={userId}
+            currentUrl={editingGym.logoUrl}
+            folder="logos"
+            size={56}
+            placeholder="🏟️"
+            onUploaded={url => setEditingGym(g => ({ ...g, logoUrl: url }))}
+          />
         </div>
 
         <div className="field">

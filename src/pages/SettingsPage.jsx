@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { updateProfile, updatePassword } from "../lib/auth";
+import AvatarUploader from "../components/AvatarUploader";
 
 export default function SettingsPage({ user, onBack, onUserUpdated }) {
   const [tab, setTab]         = useState("profile"); // "profile" | "password"
@@ -66,6 +67,26 @@ export default function SettingsPage({ user, onBack, onUserUpdated }) {
       {/* ── Onglet profil ── */}
       {tab === "profile" && (
         <form onSubmit={handleSaveProfile} className="add-form">
+
+          {/* Avatar */}
+          <div className="field" style={{ alignItems: "center" }}>
+            <label>Photo de profil</label>
+            <AvatarUploader
+              userId={user.id}
+              currentUrl={user.avatarUrl}
+              folder="avatars"
+              onUploaded={async (url) => {
+                const updated = await updateProfile({ 
+                  displayName, 
+                  email, 
+                  bio, 
+                  avatarUrl: url 
+                });
+                onUserUpdated(updated);
+              }}
+            />
+          </div>
+          
           <div className="field">
             <label>Pseudo / Prénom</label>
             <input type="text" value={displayName} onChange={e => { setDisplayName(e.target.value); reset(); }} placeholder="ex. Martin" />

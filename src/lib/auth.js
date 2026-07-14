@@ -19,6 +19,7 @@ export async function signIn({ email, password }) {
     email:       u.email,
     displayName: u.user_metadata?.display_name || "",
     bio:         u.user_metadata?.bio || "",
+    avatarUrl:   u.user_metadata?.avatar_url || null,
   };
 }
 
@@ -38,6 +39,7 @@ export async function getCurrentUser() {
     email:       u.email,
     displayName: u.user_metadata?.display_name || "",
     bio:         u.user_metadata?.bio || "",
+    avatarUrl:   u.user_metadata?.avatar_url || null,
   };
 }
 
@@ -52,9 +54,9 @@ export async function sendPasswordReset(email) {
   }
 }
 
-// Met à jour les infos du profil (nom, email, bio)
-export async function updateProfile({ displayName, email, bio }) {
-  const updates = { data: { display_name: displayName, bio } };
+// Met à jour les infos du profil 
+export async function updateProfile({ displayName, email, bio, avatarUrl }) {
+  const updates = { data: { display_name: displayName, bio, avatar_url: avatarUrl } };
   if (email) updates.email = email;
 
   const { data, error } = await supabase.auth.updateUser(updates);
@@ -65,6 +67,7 @@ export async function updateProfile({ displayName, email, bio }) {
     id:           u.id,
     display_name: u.user_metadata?.display_name,
     bio:          u.user_metadata?.bio,
+    avatar_url:   u.user_metadata?.avatar_url,
   });
 
   return {
@@ -72,6 +75,7 @@ export async function updateProfile({ displayName, email, bio }) {
     email:       u.email,
     displayName: u.user_metadata?.display_name || "",
     bio:         u.user_metadata?.bio || "",
+    avatarUrl:   u.user_metadata?.avatar_url || null,
   };
 }
 

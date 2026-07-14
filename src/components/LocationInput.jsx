@@ -62,7 +62,10 @@ export default function LocationInput({ value, onChange, locations = [], placeho
             <li key={l.id}>
               <button type="button" className="location-suggestion-btn"
                 onClick={() => handleSelect(l.name)}>
-                <span>{l.is_outdoor ? "🌿" : "🏟️"}</span>
+                <span>{l.logoUrl
+                  ? <img src={l.logoUrl} alt="" style={{ width: 20, height: 20, borderRadius: "50%", objectFit: "cover" }} />
+                  : <span>{l.is_outdoor ? "🌿" : "🏟️"}</span>
+                }</span>
                 <span>{l.name}</span>
               </button>
             </li>

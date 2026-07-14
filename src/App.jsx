@@ -120,6 +120,8 @@ export default function App() {
 
   async function loadSpots(userId) {
     const data = await getLocations(userId);
+      console.log("spots data:", data.filter(l => l.is_outdoor));
+
     // Sépare les spots extérieurs des salles intérieures
     setSpots(data.filter(l => l.is_outdoor));
     setLocations(data.filter(l => !l.is_outdoor));

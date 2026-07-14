@@ -186,10 +186,10 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
               <LocationInput
                 value={form.location}
                 onChange={v => set("location", v)}
-                locations={form.outdoor ? spots : [
+                locations={form.outdoor ? spots.map(s => ({ ...s, logoUrl: s.logo_url })) : [
                   ...currentGyms
                     .filter(g => !form.outdoor && (g.types || []).includes(form.type.toLowerCase()))
-                    .map(g => ({ id: g.id, name: g.name, is_outdoor: false })),
+                    .map(g => ({ id: g.id, name: g.name, is_outdoor: false, logoUrl: g.logoUrl })),
                   ...locations.filter(l => 
                     !l.is_outdoor && !currentGyms.find(g => g.name === l.name)
                   ),

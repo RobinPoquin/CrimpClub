@@ -22,7 +22,10 @@ export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSi
       <div className="page-header"><h1>Mon profil</h1></div>
 
       <div className="profile-hero">
-        <div className="avatar">{initials}</div>
+        <div className="avatar">{user.avatarUrl
+          ? <img src={user.avatarUrl} alt="Avatar" className="avatar avatar-img" />
+          : <div className="avatar">{initials}</div>
+        }</div>
         <div>
           <h2 className="profile-name">{user.displayName || "Grimpeur"}</h2>
           <p className="profile-email">{user.email}</p>

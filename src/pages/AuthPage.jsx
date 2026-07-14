@@ -65,8 +65,8 @@ export default function AuthPage({ onLogin, theme, onToggleTheme }) {
           <img src="/logo.png" alt="CrimpClub" className="auth-header-logo-img" />
           <h1>Crimp<span>Club</span></h1>
           <p>
-            {mode === "login"  && "Content de te revoir 👋"}
-            {mode === "signup" && "Crée ton logbook gratuitement."}
+            <p>{mode === "login" ? "Content de te revoir 👋" : "Crée ton logbook gratuitement."}</p>
+            <p className="auth-quote">"Le meilleur grimpeur n'est pas celui qui grimpe les plus grosses cotations mais celui qui prend le plus de plaisir"</p>
             {mode === "forgot" && "On va t'envoyer un lien de réinitialisation."}
           </p>
         </div>
