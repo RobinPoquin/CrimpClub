@@ -1,6 +1,7 @@
 import { useEffect } from "react";
+import LocationInput from "./LocationInput";
 
-export default function GymColorPicker({ gyms, selectedGymId, selectedColorId, onGymChange, onColorSelect }) {
+export default function GymColorPicker({ gyms, selectedGymId, selectedColorId, onGymChange, onColorSelect, userId, onGymCreated }) {
   // Auto-sélectionne si une seule salle
   useEffect(() => {
     if (!selectedGymId && gyms.length === 1) {
@@ -14,32 +15,28 @@ export default function GymColorPicker({ gyms, selectedGymId, selectedColorId, o
   return (
     <div className="gym-color-picker">
 
-      {/* Select salle — masqué si une seule salle */}
-      {gyms.length !== 1 && (
-        <div className="field">
-          <label>Salle</label>
-          {gyms.length === 0 ? (
-            <p className="field-hint">⚠️ Aucune salle configurée. Va dans <strong>Profil → Mes salles & couleurs</strong> pour en ajouter une.</p>
-          ) : (
-            <select value={selectedGymId || ""} onChange={e => onGymChange(e.target.value || null)}>
-              <option value="">— Choisir une salle —</option>
-              {gyms.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-            </select>
-          )}
-        </div>
-      )}
-
-      {/* Nom de la salle quand auto-sélectionnée */}
-      {gyms.length === 1 && gym && (
-        <div className="field">
-          <label>Salle</label>
-          <div className="gym-single-name">
-            🏟️ {gym.name}
-            <button type="button" className="link-btn" style={{ fontSize: 12, marginLeft: 8 }}
-              onClick={() => onGymChange(null)}>changer</button>
-          </div>
-        </div>
-      )}
+      {/* Champ salle avec autocomplétion */}
+      <div className="field">
+        <label>Salle</label>
+        {gyms.length === 0 ? (
+          <p className="field-hint">⚠️ Aucune salle configurée. Va dans <strong>Profil → Mes salles & couleurs</strong> pour en ajouter une.</p>
+        ) : (
+          <LocationInput
+            value={gym?.name || ""}
+            onChange={name => {
+              // Cherche la salle par nom dans la liste
+              const found = gyms.find(g => g.name === name);
+              onGymChange(found ? found.id : null);
+            }}
+            locations={gyms.map(g => ({ id: g.id, name: g.name, is_outdoor: false }))}
+            placeholder="ex. La Verticale"
+            userId={userId}
+            gyms={gyms}
+            onGymCreated={onGymCreated}
+            showCreateGym={true}
+          />
+        )}
+      </div>
 
       {/* Pastilles de couleur */}
       {gym && colors.length > 0 && (

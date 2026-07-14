@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import InlineGymCreator from "./InlineGymCreator";
 
 // Champ de saisie avec autocomplétion sur les lieux mémorisés
-export default function LocationInput({ value, onChange, locations = [], placeholder, userId, gyms = [], onGymCreated, showCreateGym = false }) {
+export default function LocationInput({ value, onChange, locations = [], placeholder, userId, gyms = [], onGymCreated, showCreateGym = false, isOutdoor = false }) {
   const [open, setOpen]         = useState(false);
   const [query, setQuery]       = useState(value || "");
   const [creating, setCreating] = useState(false); // Affiche le mini-formulaire
@@ -67,13 +67,13 @@ export default function LocationInput({ value, onChange, locations = [], placeho
               </button>
             </li>
           ))}
-          {/* Bouton créer salle (seulement en intérieur) */}
+          {/* Bouton créer salle ou spot si extérieur */}
           {showCreateGym && (
             <li>
               <button type="button" className="location-suggestion-btn location-create-btn"
                 onClick={() => { setCreating(true); setOpen(false); }}>
                 <span>➕</span>
-                <span>Créer une nouvelle salle</span>
+                <span>{isOutdoor ? "Créer un nouveau spot" : "Créer une nouvelle salle"}</span>
               </button>
             </li>
           )}
@@ -87,6 +87,7 @@ export default function LocationInput({ value, onChange, locations = [], placeho
             userId={userId}
             onCreated={handleGymCreated}
             onCancel={() => setCreating(false)}
+            isOutdoor={isOutdoor}
           />
         </div>
       )}

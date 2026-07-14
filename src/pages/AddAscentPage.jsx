@@ -168,20 +168,9 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
               selectedColorId={form.colorId}
               onGymChange={handleGymChange}
               onColorSelect={handleColorSelect}
+              userId={userId}
+              onGymCreated={handleGymCreated}
             />
-            <div className="field">
-              <label>Salle</label>
-              <LocationInput
-                value={form.location}
-                onChange={v => set("location", v)}
-                locations={currentGyms.map(g => ({ id: g.id, name: g.name, is_outdoor: false }))}
-                placeholder="ex. La Verticale"
-                userId={userId}
-                gyms={currentGyms}
-                onGymCreated={handleGymCreated}
-                showCreateGym={true}
-              />
-            </div>
           </>
         ) : (
           /* ── Mode classique ── */
@@ -209,7 +198,8 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
                 userId={userId}
                 gyms={currentGyms}
                 onGymCreated={handleGymCreated}
-                showCreateGym={!form.outdoor}
+                showCreateGym={true}
+                isOutdoor={true}
               />
             </div>
           </>

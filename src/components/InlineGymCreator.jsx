@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { addGym } from "../lib/gyms";
+import { saveLocation } from "../lib/locations";
 
 const DEFAULT_COLORS = [
   { id: "c1", name: "Jaune",  hex: "#FACC15", gradeHint: "" },
@@ -13,7 +14,7 @@ function newColor() {
   return { id: `c_${Date.now()}`, name: "", hex: "#888888", gradeHint: "" };
 }
 
-export default function InlineGymCreator({ userId, onCreated, onCancel }) {
+export default function InlineGymCreator({ userId, onCreated, onCancel, isOutdoor = false }) {
   const [name, setName]     = useState("");
   const [types, setTypes]   = useState(['bloc', 'diff']);
   const [colors, setColors] = useState(DEFAULT_COLORS.map(c => ({...c})));
@@ -43,19 +44,21 @@ export default function InlineGymCreator({ userId, onCreated, onCancel }) {
   }
 
   async function handleSave() {
-    if (!name.trim()) { setError("Donne un nom à la salle."); return; }
-    if (types.includes('bloc') && colors.some(c => !c.name.trim())) {
-      setError("Tous les niveaux doivent avoir un nom.");
-      return;
-    }
+    if (!name.trim()) { setError(`Donne un nom ${isOutdoor ? "au spot" : "à la salle"}.`); return; }
     setSaving(true);
     try {
-      const gym = await addGym(userId, {
-        name,
-        types,
-        colors: types.includes('bloc') ? colors : [],
-      });
-      onCreated(gym);
+      if (isOutdoor) {
+        // Crée un spot extérieur
+        await saveLocation(userId, name, true, types);
+        onCreated({ name, types, is_outdoor: true });
+      } else {
+        const gym = await addGym(userId, {
+          name,
+          types,
+          colors: types.includes('bloc') ? colors : [],
+        });
+        onCreated(gym);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -66,7 +69,7 @@ export default function InlineGymCreator({ userId, onCreated, onCancel }) {
   return (
     <div className="inline-gym-creator">
       <div className="inline-gym-header">
-        <span className="inline-gym-title">Nouvelle salle</span>
+        <span className="inline-gym-title">{isOutdoor ? "Nouveau spot" : "Nouvelle salle"}</span>
         <button type="button" className="inline-gym-close" onClick={onCancel}>✕</button>
       </div>
 
@@ -89,7 +92,7 @@ export default function InlineGymCreator({ userId, onCreated, onCancel }) {
       </div>
 
       {/* Couleurs — seulement si bloc */}
-      {types.includes('bloc') && (
+      {!isOutdoor && types.includes('bloc') && (
         <div className="field">
           <label>Niveaux de couleurs <span className="optional">(du + facile au + difficile)</span></label>
           <div className="color-editor-list">
