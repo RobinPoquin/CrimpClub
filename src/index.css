@@ -1342,3 +1342,71 @@ textarea { resize: vertical; }
   border-radius: 8px;
   outline: none;
 }
+
+/* ── Location autocomplete ───────────────────── */
+.location-input-wrap {
+  position: relative;
+}
+
+.location-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0; right: 0;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-focus);
+  border-radius: var(--radius);
+  list-style: none;
+  z-index: 50;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+}
+
+.location-suggestion-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 14px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition: background .1s;
+}
+.location-suggestion-btn:hover {
+  background: var(--bg-input);
+}
+
+/* ── Inline gym creator ──────────────────────── */
+.location-creator-wrap {
+  padding: 14px;
+}
+.inline-gym-creator {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.inline-gym-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.inline-gym-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+.inline-gym-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+.location-create-btn {
+  color: var(--accent);
+  font-weight: 600;
+  border-top: 1px solid var(--border);
+}

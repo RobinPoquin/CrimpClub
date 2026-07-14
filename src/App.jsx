@@ -7,10 +7,12 @@ import ProfilePage from "./pages/ProfilePage";
 import GymManagerPage from "./pages/GymManagerPage";
 import SettingsPage from "./pages/SettingsPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import SpotManagerPage from "./pages/SpotManagerPage";
 import { getCurrentUser, signOut } from "./lib/auth";
 import { getAscents, deleteAscent } from "./lib/db";
 import { getGyms } from "./lib/gyms";
 import { supabase } from "./lib/supabase";
+import { getLocations } from "./lib/locations";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -28,6 +30,8 @@ export default function App() {
   const [loading, setLoading]       = useState(true);
   const [editAscent, setEditAscent] = useState(null);
   const [theme, setTheme]           = useState(() => localStorage.getItem("cc_theme") || "light");
+  const [locations, setLocations]   = useState([]);
+  const [spots, setSpots] = useState([]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -45,7 +49,7 @@ export default function App() {
 
     getCurrentUser().then((u) => {
       setUser(u);
-      if (u) { loadAscents(u.id); loadGyms(u.id); }
+      if (u) { loadAscents(u.id); loadGyms(u.id); loadSpots(u.id); }
       setLoading(false);
     }).catch(() => {
       setUser(null);
@@ -75,6 +79,7 @@ export default function App() {
     setUser(u);
     loadAscents(u.id);
     loadGyms(u.id);
+    loadSpots(u.id);
     migrateMediaUrls(); // Migration one-shot
     setActiveTab("logbook");
   }
@@ -88,6 +93,8 @@ export default function App() {
 
   function handleAscentSaved() {
     loadAscents(user.id);
+    loadSpots(user.id);
+    loadGyms(user.id);
     setEditAscent(null);
     setActiveTab("logbook");
   }
@@ -109,6 +116,13 @@ export default function App() {
 
   function handleUserUpdated(updatedUser) {
     setUser(updatedUser);
+  }
+
+  async function loadSpots(userId) {
+    const data = await getLocations(userId);
+    // Sépare les spots extérieurs des salles intérieures
+    setSpots(data.filter(l => l.is_outdoor));
+    setLocations(data.filter(l => !l.is_outdoor));
   }
 
   if (loading) return <div className="loading">Chargement…</div>;
@@ -156,6 +170,19 @@ export default function App() {
     </div>
   );
 
+  if (subPage === "spots") return (
+    <div className="app-shell">
+      <main className="app-content">
+        <SpotManagerPage
+          userId={user.id}
+          spots={spots}
+          onSpotsChanged={() => loadSpots(user.id)}
+          onBack={() => setSubPage(null)}
+        />
+      </main>
+    </div>
+  );
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -188,8 +215,11 @@ export default function App() {
           <AddAscentPage
             userId={user.id}
             gyms={gyms}
+            spots={spots}
+            locations={locations}
             onSaved={handleAscentSaved}
             onCancel={handleCancelForm}
+            onGymsChanged={async () => { await loadGyms(user.id); }}
             editAscent={editAscent}
           />
         )}
@@ -198,10 +228,12 @@ export default function App() {
           <ProfilePage
             user={user}
             ascents={ascents}
+            spots={spots}
             gyms={gyms}
             onSignOut={handleSignOut}
             onOpenGyms={() => setSubPage("gyms")}
             onOpenSettings={() => setSubPage("settings")}
+            onOpenSpots={() => setSubPage("spots")}
           />
         )}
       </main>

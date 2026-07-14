@@ -15,20 +15,20 @@ export async function getGyms(userId) {
   return (data || []).map(normaliseGym);
 }
 
-export async function addGym(userId, { name, colors }) {
+export async function addGym(userId, { name, colors, types }) {
   const { data, error } = await supabase
     .from("gyms")
-    .insert({ user_id: userId, name, colors })
+    .insert({ user_id: userId, name, colors, types: types || ['bloc', 'diff'] })
     .select()
     .single();
   if (error) throw new Error(error.message);
   return normaliseGym(data);
 }
 
-export async function updateGym(id, { name, colors }) {
+export async function updateGym(id, { name, colors, types }) {
   const { data, error } = await supabase
     .from("gyms")
-    .update({ name, colors })
+    .update({ name, colors, types: types || ['bloc', 'diff'] })
     .eq("id", id)
     .select()
     .single();
@@ -47,5 +47,6 @@ function normaliseGym(g) {
     userId: g.user_id,
     name:   g.name,
     colors: g.colors || [],
+    types:  g.types || ['bloc', 'diff'],
   };
 }

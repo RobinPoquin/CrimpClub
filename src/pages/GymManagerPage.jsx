@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { addGym, updateGym, deleteGym } from "../lib/gyms";
+import { deleteLocationByName } from "../lib/locations";
 
 const DEFAULT_COLORS = [
   { id: "c1", name: "Jaune",  hex: "#FACC15", gradeHint: "" },
@@ -49,7 +50,7 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
                 </div>
               </div>
               <div className="gym-row-actions">
-                <button className="btn-sm" onClick={() => setEditingGym({ ...g, colors: g.colors.map(c => ({...c})) })}>✏️</button>
+                <button className="btn-sm" onClick={() => setEditingGym({ ...g, colors: g.colors.map(c => ({...c})), types: g.types || ['bloc', 'diff'] })}>✏️</button>
                 <button className="btn-sm btn-sm-danger" onClick={() => setConfirmDelete(g.id)}>🗑️</button>
               </div>
             </div>
@@ -59,7 +60,7 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
         <div style={{ padding: "16px" }}>
           <button
             className="btn-primary"
-            onClick={() => setEditingGym({ id: null, name: "", colors: DEFAULT_COLORS.map(c => ({...c})) })}
+            onClick={() => setEditingGym({ id: null, name: "", colors: DEFAULT_COLORS.map(c => ({...c})), types: ['bloc', 'diff'] })}
           >
             + Ajouter une salle
           </button>
@@ -77,7 +78,9 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
               </p>
               <button className="btn-primary" style={{ background: "var(--danger)", marginBottom: 10 }}
                 onClick={async () => {
+                  const gymToDelete = gyms.find(g => g.id === confirmDelete);
                   await deleteGym(confirmDelete);
+                  if (gymToDelete) await deleteLocationByName(userId, gymToDelete.name);
                   await onGymsChanged();
                   setConfirmDelete(null);
                 }}>
@@ -124,13 +127,16 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
 
   async function handleSave() {
     if (!editingGym.name.trim()) { setError("Donne un nom à la salle."); return; }
-    if (editingGym.colors.some(c => !c.name.trim())) { setError("Tous les niveaux doivent avoir un nom."); return; }
+    if ((editingGym.types || []).includes('bloc') && editingGym.colors.some(c => !c.name.trim())) {
+      setError("Tous les niveaux doivent avoir un nom.");
+      return;
+    }
     setSaving(true);
     try {
       if (isNew) {
-        await addGym(userId, { name: editingGym.name, colors: editingGym.colors });
+        await addGym(userId, { name: editingGym.name, colors: editingGym.colors, types: editingGym.types });
       } else {
-        await updateGym(editingGym.id, { name: editingGym.name, colors: editingGym.colors });
+        await updateGym(editingGym.id, { name: editingGym.name, colors: editingGym.colors, types: editingGym.types });
       }
       await onGymsChanged();
       setEditingGym(null);
@@ -155,52 +161,73 @@ export default function GymManagerPage({ userId, gyms, onGymsChanged, onBack }) 
         </div>
 
         <div className="field">
-          <label>Niveaux de couleurs <span className="optional">(du + facile au + difficile)</span></label>
-          <p className="field-hint">Fais glisser ↕ pour réordonner. Chaque couleur peut avoir une cotation indicative.</p>
+          <label>Type de salle</label>
+          <div className="pill-group">
+            {['bloc', 'diff'].map(t => (
+              <button key={t} type="button"
+                className={`pill ${(editingGym.types || []).includes(t) ? "pill-active" : ""}`}
+                onClick={() => {
+                  const types = editingGym.types || ['bloc', 'diff'];
+                  const next = types.includes(t) ? types.filter(x => x !== t) : [...types, t];
+                  if (next.length === 0) return;
+                  setEditingGym(g => ({ ...g, types: next }));
+                }}>
+                {t === 'bloc' ? '🧱 Bloc' : '🧗 Diff'}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="color-editor-list">
-          {editingGym.colors.map((c, idx) => (
-            <div key={c.id} className="color-editor-row">
-
-              {/* Ligne 1 : numéro + pastille + nom + supprimer */}
-              <div className="color-row-top">
-                <span className="color-order">{idx + 1}</span>
-                <div className="color-swatch-input-wrap">
-                  <input type="color" value={c.hex}
-                    onChange={e => setColor(idx, "hex", e.target.value)}
-                    className="color-input-native" title="Choisir la couleur" />
-                  <span className="color-preview" style={{ background: c.hex }} />
-                </div>
-                <input type="text" placeholder="Nom (ex: Jaune)" value={c.name}
-                  onChange={e => setColor(idx, "name", e.target.value)}
-                  className="color-name-input" />
-                <button type="button" onClick={() => removeColor(idx)}
-                  className="remove-color-btn" aria-label="Supprimer">✕</button>
-              </div>
-
-              {/* Ligne 2 : cotation indicative + boutons ordre */}
-              <div className="color-row-bottom">
-                <input type="text" placeholder="Cotation indicative (ex: 6A, optionnel)"
-                  value={c.gradeHint}
-                  onChange={e => setColor(idx, "gradeHint", e.target.value)}
-                  className="color-hint-input-full"
-                  title="Cotation indicative (optionnel)" />
-                <div className="color-order-btns">
-                  <button type="button" onClick={() => moveColor(idx, -1)}
-                    disabled={idx === 0} className="order-btn">↑</button>
-                  <button type="button" onClick={() => moveColor(idx, 1)}
-                    disabled={idx === editingGym.colors.length - 1} className="order-btn">↓</button>
-                </div>
-              </div>
-
+        {/* Couleurs seulement si la salle fait du bloc */}
+        {(editingGym.types || []).includes('bloc') && (
+          <>
+            <div className="field">
+              <label>Niveaux de couleurs <span className="optional">(du + facile au + difficile)</span></label>
+              <p className="field-hint">Fais glisser ↕ pour réordonner. Chaque couleur peut avoir une cotation indicative.</p>
             </div>
-          ))}
-        </div>
 
-        <button type="button" className="btn-outline-accent" onClick={addColor}>
-          + Ajouter un niveau de couleur
-        </button>
+            <div className="color-editor-list">
+              {editingGym.colors.map((c, idx) => (
+                <div key={c.id} className="color-editor-row">
+
+                  {/* Ligne 1 : numéro + pastille + nom + supprimer */}
+                  <div className="color-row-top">
+                    <span className="color-order">{idx + 1}</span>
+                    <div className="color-swatch-input-wrap">
+                      <input type="color" value={c.hex}
+                        onChange={e => setColor(idx, "hex", e.target.value)}
+                        className="color-input-native" title="Choisir la couleur" />
+                      <span className="color-preview" style={{ background: c.hex }} />
+                    </div>
+                    <input type="text" placeholder="Nom (ex: Jaune)" value={c.name}
+                      onChange={e => setColor(idx, "name", e.target.value)}
+                      className="color-name-input" />
+                    <button type="button" onClick={() => removeColor(idx)}
+                      className="remove-color-btn" aria-label="Supprimer">✕</button>
+                  </div>
+
+                  {/* Ligne 2 : cotation indicative + boutons ordre */}
+                  <div className="color-row-bottom">
+                    <input type="text" placeholder="Cotation indicative (ex: 6A, optionnel)"
+                      value={c.gradeHint}
+                      onChange={e => setColor(idx, "gradeHint", e.target.value)}
+                      className="color-hint-input-full"
+                      title="Cotation indicative (optionnel)" />
+                    <div className="color-order-btns">
+                      <button type="button" onClick={() => moveColor(idx, -1)}
+                        disabled={idx === 0} className="order-btn">↑</button>
+                      <button type="button" onClick={() => moveColor(idx, 1)}
+                      disabled={idx === editingGym.colors.length - 1} className="order-btn">↓</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" className="btn-outline-accent" onClick={addColor}>
+            + Ajouter un niveau de couleur
+          </button>
+        </>
+      )}
 
         {error && <p className="error-msg">{error}</p>}
 

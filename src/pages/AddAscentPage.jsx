@@ -1,7 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { addAscent, updateAscent } from "../lib/db";
 import MediaUploader from "../components/MediaUploader";
 import GymColorPicker from "../components/GymColorPicker";
+import LocationInput from "../components/LocationInput";
+import { saveLocation } from "../lib/locations";
 
 const GRADES_FRENCH = [
   "3","3+","4","4+","5a","5b","5c",
@@ -43,7 +45,7 @@ const EMPTY = ascentToForm({});
 // Bloc intérieur = mode couleur
 const isColorMode = (form) => form.type === "Bloc" && !form.outdoor;
 
-export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, editAscent = null }) {
+export default function AddAscentPage({ userId, gyms = [], locations = [], spots = [], onSaved, onCancel, onGymsChanged, editAscent = null }) {
   const isEdit = !!editAscent;
   const [form, setForm]     = useState(isEdit ? ascentToForm(editAscent) : EMPTY);
   const [error, setError]   = useState("");
@@ -52,6 +54,14 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
   const colorMode = isColorMode(form);
   const isBloc    = form.type === "Bloc";
   const grades    = isBloc ? GRADES_BLOC : GRADES_FRENCH;
+
+  // State local des gyms pour mise à jour immédiate après création
+  const [currentGyms, setCurrentGyms] = useState(gyms);
+
+  // Synchronise currentGyms quand le parent recharge les gyms
+  useEffect(() => {
+    setCurrentGyms(gyms);
+  }, [gyms]);
 
   function set(field, value) {
     setForm(f => {
@@ -76,7 +86,7 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
   function handleGymChange(gymId) {
     setForm(f => ({ ...f, gymId, colorId: null, colorHex: null, colorName: null, gradeHint: null,
       // Pré-remplir le lieu avec le nom de la salle
-      location: gyms.find(g => g.id === gymId)?.name || f.location,
+      location: currentGyms.find(g => g.id === gymId)?.name || f.location,
     }));
   }
 
@@ -91,6 +101,16 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
     }));
   }
 
+  async function handleGymCreated(gym) {
+    console.log("Gym créé:", gym);
+    // Met à jour les gyms locaux immédiatement
+    setCurrentGyms(prev => [...prev, gym]);
+    // Auto-sélectionne la salle créée
+    handleGymChange(gym.id);
+    // Recharge depuis Supabase pour le parent
+    if (onGymsChanged) await onGymsChanged();
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.location.trim()) { setError("Indique la salle ou le site."); return; }
@@ -99,6 +119,7 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
     try {
       if (isEdit) await updateAscent(editAscent.id, form);
       else        await addAscent(userId, form);
+      await saveLocation(userId, form.location, form.outdoor); // Mémorise le lieu automatiquement
       onSaved();
     } catch (err) {
       setError(err.message);
@@ -139,14 +160,29 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
 
         {/* COTATION — mode couleur ou mode classique */}
         {colorMode ? (
-          /* ── Mode couleur : Bloc intérieur ── */
-          <GymColorPicker
-            gyms={gyms}
-            selectedGymId={form.gymId}
-            selectedColorId={form.colorId}
-            onGymChange={handleGymChange}
-            onColorSelect={handleColorSelect}
-          />
+        /* ── Mode couleur : Bloc intérieur ── */
+          <>
+            <GymColorPicker
+              gyms={currentGyms}
+              selectedGymId={form.gymId}
+              selectedColorId={form.colorId}
+              onGymChange={handleGymChange}
+              onColorSelect={handleColorSelect}
+            />
+            <div className="field">
+              <label>Salle</label>
+              <LocationInput
+                value={form.location}
+                onChange={v => set("location", v)}
+                locations={currentGyms.map(g => ({ id: g.id, name: g.name, is_outdoor: false }))}
+                placeholder="ex. La Verticale"
+                userId={userId}
+                gyms={currentGyms}
+                onGymCreated={handleGymCreated}
+                showCreateGym={true}
+              />
+            </div>
+          </>
         ) : (
           /* ── Mode classique ── */
           <>
@@ -158,21 +194,25 @@ export default function AddAscentPage({ userId, gyms = [], onSaved, onCancel, ed
             </div>
             <div className="field">
               <label>{form.outdoor ? "Site extérieur" : "Salle"}</label>
-              <input type="text"
-                placeholder={form.outdoor ? "ex. Gorges du Verdon" : "ex. Arkose Nation"}
+              <LocationInput
                 value={form.location}
-                onChange={e => set("location", e.target.value)} />
+                onChange={v => set("location", v)}
+                locations={form.outdoor ? spots : [
+                  ...currentGyms
+                    .filter(g => !form.outdoor && (g.types || []).includes(form.type.toLowerCase()))
+                    .map(g => ({ id: g.id, name: g.name, is_outdoor: false })),
+                  ...locations.filter(l => 
+                    !l.is_outdoor && !currentGyms.find(g => g.name === l.name)
+                  ),
+                ]}
+                placeholder={form.outdoor ? "ex. Gorges du Verdon" : "ex. Arkose Nation"}
+                userId={userId}
+                gyms={currentGyms}
+                onGymCreated={handleGymCreated}
+                showCreateGym={!form.outdoor}
+              />
             </div>
           </>
-        )}
-
-        {/* Lieu (mode couleur : déjà pré-rempli, mais éditable) */}
-        {colorMode && (
-          <div className="field">
-            <label>Salle <span className="optional">(pré-rempli)</span></label>
-            <input type="text" placeholder="Nom de la salle"
-              value={form.location} onChange={e => set("location", e.target.value)} />
-          </div>
         )}
 
         {/* Résultat */}

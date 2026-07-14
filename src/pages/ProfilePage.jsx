@@ -1,4 +1,4 @@
-export default function ProfilePage({ user, ascents, gyms = [], onSignOut, onOpenGyms, onOpenSettings }) {
+export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSignOut, onOpenGyms, onOpenSettings, onOpenSpots }) {
   const initials = user.displayName
     ? user.displayName.slice(0, 2).toUpperCase()
     : user.email.slice(0, 2).toUpperCase();
@@ -53,6 +53,13 @@ export default function ProfilePage({ user, ascents, gyms = [], onSignOut, onOpe
           <span>🏟️ Mes salles &amp; couleurs</span>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="setting-val">{gyms.length} salle{gyms.length !== 1 ? "s" : ""}</span>
+            <span className="chevron">›</span>
+          </div>
+        </button>
+        <button className="setting-row" onClick={onOpenSpots}>
+          <span>🌿 Mes spots extérieurs</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="setting-val">{spots.length} spot{spots.length !== 1 ? "s" : ""}</span>
             <span className="chevron">›</span>
           </div>
         </button>
