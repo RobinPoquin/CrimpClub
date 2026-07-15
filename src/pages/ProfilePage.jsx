@@ -6,17 +6,6 @@ export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSi
   const outdoor = ascents.filter((a) => a.outdoor).length;
   const sites = new Set(ascents.map((a) => a.location).filter(Boolean)).size;
 
-  function exportData() {
-    const json = JSON.stringify(ascents, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `climblog_export_${new Date().toISOString().split("T")[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
     <div className="page">
       <div className="page-header"><h1>Mon profil</h1></div>
@@ -66,14 +55,6 @@ export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSi
             <span className="chevron">›</span>
           </div>
         </button>
-        <button className="setting-row" onClick={exportData}>
-          <span>⬇️ Exporter mes données</span>
-          <span className="chevron">›</span>
-        </button>
-        <div className="setting-row setting-info">
-          <span>📧 Email</span>
-          <span className="setting-val">{user.email}</span>
-        </div>
         <div className="setting-row setting-info">
           <span>🗓️ Membre depuis</span>
           <span className="setting-val">

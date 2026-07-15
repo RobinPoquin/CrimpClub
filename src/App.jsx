@@ -165,6 +165,7 @@ export default function App() {
       <main className="app-content">
         <SettingsPage
           user={user}
+          ascents={ascents}
           onBack={() => setSubPage(null)}
           onUserUpdated={handleUserUpdated}
         />

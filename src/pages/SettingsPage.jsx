@@ -2,7 +2,8 @@ import { useState } from "react";
 import { updateProfile, updatePassword } from "../lib/auth";
 import AvatarUploader from "../components/AvatarUploader";
 
-export default function SettingsPage({ user, onBack, onUserUpdated }) {
+// Reçoit les ascensions pour l'export de données
+export default function SettingsPage({ user, ascents = [], onBack, onUserUpdated }) {
   const [tab, setTab]         = useState("profile"); // "profile" | "password"
   const [saving, setSaving]   = useState(false);
   const [success, setSuccess] = useState("");
@@ -19,6 +20,50 @@ export default function SettingsPage({ user, onBack, onUserUpdated }) {
   const [confirmPwd, setConfirmPwd]   = useState("");
 
   function reset() { setError(""); setSuccess(""); }
+
+  // Exporte toutes les ascensions au format JSON
+function exportJSON() {
+  const json = JSON.stringify(ascents, null, 2);
+  const blob = new Blob([json], { type: "application/json" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `crimpclub_export_${new Date().toISOString().split("T")[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+  // Exporte toutes les ascensions au format CSV (compatible Excel/Google Sheets)
+  function exportCSV() {
+    // Définit les colonnes
+    const headers = [
+      "Date", "Type", "Cotation", "Couleur", "Cotation indicative",
+      "Résultat", "Lieu", "Extérieur", "Nom de la voie", "Commentaire"
+    ];
+    // Convertit chaque ascension en ligne
+    const rows = ascents.map(a => [
+      a.date      || "",
+      a.type      || "",
+      a.grade     || "",
+      a.colorName || "",
+      a.gradeHint || "",
+      a.result    || "",
+      a.location  || "",
+      a.outdoor ? "Oui" : "Non",
+      a.routeName || "",
+      // Échappe les guillemets pour éviter que les virgules cassent le CSV
+      a.comment ? `"${a.comment.replace(/"/g, '""')}"` : "",
+    ]);
+    const csv  = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    // BOM UTF-8 pour que Excel affiche correctement les accents
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href     = url;
+    a.download = `crimpclub_export_${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   async function handleSaveProfile(e) {
     e.preventDefault();
@@ -62,6 +107,7 @@ export default function SettingsPage({ user, onBack, onUserUpdated }) {
       <div className="settings-tabs">
         <button className={`stab ${tab === "profile"  ? "stab-active" : ""}`} onClick={() => { setTab("profile");  reset(); }}>Mon compte</button>
         <button className={`stab ${tab === "password" ? "stab-active" : ""}`} onClick={() => { setTab("password"); reset(); }}>Mot de passe</button>
+        <button className={`stab ${tab === "data"     ? "stab-active" : ""}`} onClick={() => { setTab("data");     reset(); }}>Données</button>
       </div>
 
       {/* ── Onglet profil ── */}
@@ -134,6 +180,34 @@ export default function SettingsPage({ user, onBack, onUserUpdated }) {
             {saving ? "Modification…" : "Changer le mot de passe"}
           </button>
         </form>
+      )}
+
+      {/* ── Onglet export de données ── */}
+      {tab === "data" && (
+        <div className="add-form">
+          <div className="field">
+            <label>Exporter mes ascensions</label>
+            <p className="field-hint">
+              Télécharge une copie de toutes tes ascensions.
+              Utile pour sauvegarder tes données ou les analyser dans Excel.
+            </p>
+          </div>
+
+          {/* Export JSON — format brut, idéal pour réimport ou développeurs */}
+          <button className="btn-primary" onClick={exportJSON}>
+            ⬇️ Exporter en JSON
+          </button>
+
+          {/* Export CSV — format tableur pour Excel ou Google Sheets */}
+          <button className="btn-primary" style={{ background: "var(--text-secondary)" }} onClick={exportCSV}>
+            ⬇️ Exporter en CSV
+          </button>
+
+          {/* Indique combien d'ascensions seront exportées */}
+          <p className="field-hint" style={{ marginTop: 8 }}>
+            {ascents.length} ascension{ascents.length !== 1 ? "s" : ""} à exporter
+          </p>
+        </div>
       )}
     </div>
   );
