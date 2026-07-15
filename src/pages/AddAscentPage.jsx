@@ -42,21 +42,18 @@ function ascentToForm(a) {
 
 const EMPTY = ascentToForm({});
 
-// Bloc intérieur = mode couleur
-const isColorMode = (form) => form.type === "Bloc" && !form.outdoor;
-
 export default function AddAscentPage({ userId, gyms = [], locations = [], spots = [], onSaved, onCancel, onGymsChanged, editAscent = null }) {
   const isEdit = !!editAscent;
   const [form, setForm]     = useState(isEdit ? ascentToForm(editAscent) : EMPTY);
   const [error, setError]   = useState("");
   const [saving, setSaving] = useState(false);
+  const [currentGyms, setCurrentGyms] = useState(gyms);
+  const [blocMode, setBlocMode] = useState(editAscent?.colorId ? "color" : "grade");
 
-  const colorMode = isColorMode(form);
+  // Bloc intérieur en mode couleur
+  const colorMode = form.type === "Bloc" && !form.outdoor && blocMode === "color";
   const isBloc    = form.type === "Bloc";
   const grades    = isBloc ? GRADES_BLOC : GRADES_FRENCH;
-
-  // State local des gyms pour mise à jour immédiate après création
-  const [currentGyms, setCurrentGyms] = useState(gyms);
 
   // Synchronise currentGyms quand le parent recharge les gyms
   useEffect(() => {
@@ -157,6 +154,36 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
             className={`toggle ${form.outdoor ? "toggle-on" : ""}`}
             onClick={() => set("outdoor", !form.outdoor)} />
         </div>
+
+        {/* Choix du mode de cotation pour les blocs intérieurs */}
+        {form.type === "Bloc" && !form.outdoor && (
+          <div className="field">
+            <label>Système de cotation</label>
+            <div className="pill-group">
+              <button type="button"
+                className={`pill ${blocMode === "color" ? "pill-active" : ""}`}
+                onClick={() => {
+                  setBlocMode("color");
+                  // Reset la cotation officielle si on passe en couleur
+                  set("grade", "6A");
+                }}>
+                🎨 Couleurs
+              </button>
+              <button type="button"
+                className={`pill ${blocMode === "grade" ? "pill-active" : ""}`}
+                onClick={() => {
+                  setBlocMode("grade");
+                  // Reset les couleurs si on passe en cotation
+                  set("colorId", null);
+                  set("colorHex", null);
+                  set("colorName", null);
+                  set("gymId", null);
+                }}>
+                🔢 Cotation officielle
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* COTATION — mode couleur ou mode classique */}
         {colorMode ? (

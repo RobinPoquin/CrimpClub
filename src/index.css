@@ -560,7 +560,7 @@ textarea { resize: vertical; }
 .pyramid { display: flex; flex-direction: column; gap: 8px; }
 .pyr-row { display: flex; align-items: center; gap: 10px; }
 .pyr-grade { font-size: 13px; font-weight: 700; color: var(--text-secondary); width: 34px; text-align: right; flex-shrink: 0; }
-.pyr-bar-wrap { flex: 1; height: 22px; background: var(--bg-input); border-radius: 6px; overflow: hidden; }
+.pyr-bar-wrap { flex: 1; height: 22px; background: var(--bg-input); border-radius: 6px; overflow: hidden; display: flex;}
 .pyr-bar { height: 100%; background: var(--accent); border-radius: 6px; transition: width .5s cubic-bezier(.4,0,.2,1); }
 .pyr-count { font-size: 13px; font-weight: 700; color: var(--text-muted); width: 20px; }
 

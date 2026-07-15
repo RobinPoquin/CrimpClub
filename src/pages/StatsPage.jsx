@@ -30,17 +30,25 @@ export default function StatsPage({ ascents, gyms = [] }) {
   }, gradedDone[0]);
   const maxGrade = maxAscent ? ascentDisplayGrade(maxAscent).label : "--";
 
-  // ── Pyramide voies cotées ──────────────────────
-  const gradeCounts = {};
-  // Exclure les blocs couleur (ils ont leur propre pyramide)
-  done.filter(a => ascentToPoints(a) !== null && !a.colorId).forEach(a => {
+  // ── Pyramide voies cotées (intérieur + extérieur) ──
+  const routeGradeCountsIn  = {};
+  const routeGradeCountsOut = {};
+  done.filter(a => ascentToPoints(a) !== null && !a.colorId && a.type !== "Bloc").forEach(a => {
     const { label } = ascentDisplayGrade(a);
-    gradeCounts[label] = (gradeCounts[label] || 0) + 1;
+    if (a.outdoor) {
+      routeGradeCountsOut[label] = (routeGradeCountsOut[label] || 0) + 1;
+    } else {
+      routeGradeCountsIn[label] = (routeGradeCountsIn[label] || 0) + 1;
+    }
   });
-  const pyramidRoute = Object.entries(gradeCounts)
-    .sort(([a], [b]) => ORDER.indexOf(b) - ORDER.indexOf(a))
-    .slice(0, 8);
-  const maxRouteCount = Math.max(...pyramidRoute.map(([, c]) => c), 1);
+  const allRouteLabels = [...new Set([
+    ...Object.keys(routeGradeCountsIn),
+    ...Object.keys(routeGradeCountsOut),
+  ])].sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a)).slice(0, 8);
+  const maxRouteCount = Math.max(
+    ...allRouteLabels.map(l => (routeGradeCountsIn[l] || 0) + (routeGradeCountsOut[l] || 0)),
+    1
+  );
 
   // ── Pyramide blocs couleur — 6 niveaux normalisés ──
   const colorLevelCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
@@ -53,6 +61,26 @@ export default function StatsPage({ ascents, gyms = [] }) {
     }
   });
   const maxColorCount = Math.max(...Object.values(colorLevelCounts), 1);
+
+  // ── Pyramide blocs cotés (intérieur coté + extérieur) ──
+  const blocGradeCountsIn  = {};
+  const blocGradeCountsOut = {};
+  done.filter(a => a.type === "Bloc" && !a.colorId && ascentToPoints(a) !== null).forEach(a => {
+    const { label } = ascentDisplayGrade(a);
+    if (a.outdoor) {
+      blocGradeCountsOut[label] = (blocGradeCountsOut[label] || 0) + 1;
+    } else {
+      blocGradeCountsIn[label] = (blocGradeCountsIn[label] || 0) + 1;
+    }
+  });
+  const allBlocLabels = [...new Set([
+    ...Object.keys(blocGradeCountsIn),
+    ...Object.keys(blocGradeCountsOut),
+  ])].sort((a, b) => ORDER.indexOf(b) - ORDER.indexOf(a)).slice(0, 8);
+  const maxBlocCount = Math.max(
+    ...allBlocLabels.map(l => (blocGradeCountsIn[l] || 0) + (blocGradeCountsOut[l] || 0)),
+    1
+  );
 
   // Types
   const typeCounts = {};
@@ -91,19 +119,41 @@ export default function StatsPage({ ascents, gyms = [] }) {
       <ProgressionChart ascents={ascents} gyms={gyms} />
 
       {/* ── Pyramide voies cotées ── */}
-      {pyramidRoute.length > 0 && (
+      {allRouteLabels.length > 0 && (
         <section className="stats-section">
           <h2>Pyramide — Voies cotées</h2>
+          <div className="pyr-hint" style={{ marginBottom: 12, display: "flex", gap: 16 }}>
+            <span><span style={{ color: "#22C55E" }}>■</span> Intérieur</span>
+            <span><span style={{ color: "#3B82F6" }}>■</span> Extérieur</span>
+          </div>
           <div className="pyramid">
-            {pyramidRoute.map(([label, count]) => (
-              <div key={label} className="pyr-row">
-                <span className="pyr-grade">{label}</span>
-                <div className="pyr-bar-wrap">
-                  <div className="pyr-bar" style={{ width: `${(count / maxRouteCount) * 100}%` }} />
+            {allRouteLabels.map(label => {
+              const inCount  = routeGradeCountsIn[label]  || 0;
+              const outCount = routeGradeCountsOut[label] || 0;
+              const tot      = inCount + outCount;
+              return (
+                <div key={label} className="pyr-row">
+                  <span className="pyr-grade">{label}</span>
+                  <div className="pyr-bar-wrap">
+                    {inCount > 0 && (
+                      <div className="pyr-bar" style={{
+                        width: `${(inCount / maxRouteCount) * 100}%`,
+                        background: "#22C55E",
+                        borderRadius: outCount > 0 ? "6px 0 0 6px" : "6px",
+                      }} />
+                    )}
+                    {outCount > 0 && (
+                      <div className="pyr-bar" style={{
+                        width: `${(outCount / maxRouteCount) * 100}%`,
+                        background: "#3B82F6",
+                        borderRadius: inCount > 0 ? "0 6px 6px 0" : "6px",
+                      }} />
+                    )}
+                  </div>
+                  <span className="pyr-count">{tot}</span>
                 </div>
-                <span className="pyr-count">{count}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -146,6 +196,49 @@ export default function StatsPage({ ascents, gyms = [] }) {
                 <span>{lvl.label}</span>
               </div>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Pyramide blocs cotés ── */}
+      {allBlocLabels.length > 0 && (
+        <section className="stats-section">
+          <h2>Pyramide — Blocs cotés</h2>
+          <div className="pyr-hint" style={{ marginBottom: 12, display: "flex", gap: 16 }}>
+            <span><span style={{ color: "#F59E0B" }}>■</span> Intérieur</span>
+            <span><span style={{ color: "#3B82F6" }}>■</span> Extérieur</span>
+          </div>
+          <div className="pyramid">
+            {allBlocLabels.map(label => {
+              const inCount  = blocGradeCountsIn[label]  || 0;
+              const outCount = blocGradeCountsOut[label] || 0;
+              const total    = inCount + outCount;
+              return (
+                <div key={label} className="pyr-row">
+                  <span className="pyr-grade">{label}</span>
+                  <div className="pyr-bar-wrap">
+                    {/* Barre intérieur */}
+                    {inCount > 0 && (
+                      <div className="pyr-bar" style={{
+                        width: `${(inCount / maxBlocCount) * 100}%`,
+                        background: "#F59E0B",
+                        borderRadius: outCount > 0 ? "6px 0 0 6px" : "6px",
+                      }} />
+                    )}
+                    {/* Barre extérieur accolée */}
+                    {outCount > 0 && (
+                      <div className="pyr-bar" style={{
+                        width: `${(outCount / maxBlocCount) * 100}%`,
+                        background: "#3B82F6",
+                        borderRadius: inCount > 0 ? "0 6px 6px 0" : "6px",
+                        marginLeft: inCount > 0 ? 0 : undefined,
+                      }} />
+                    )}
+                  </div>
+                  <span className="pyr-count">{total}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
