@@ -19,7 +19,7 @@ const GRADES_BLOC = [
   "8A","8A+","8B","8B+","8C","8C+",
 ];
 const TYPES   = ["Bloc","Diff","Trad","Grande voie","Deep water solo"];
-const RESULTS = ["À vue","Flash","Travaillé","Projet"];
+const RESULTS = ["Flash","Travaillé"];
 const today   = new Date().toISOString().split("T")[0];
 
 function ascentToForm(a) {

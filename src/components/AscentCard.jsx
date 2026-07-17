@@ -2,10 +2,8 @@ import { useState } from "react";
 import { ascentToColorLevel, COLOR_LEVELS } from "../lib/gradePoints";
 
 const RESULT_MAP = {
-  "À vue":     { bar: "bar-vue",    badge: "result-vue",    label: "À vue" },
   "Flash":     { bar: "bar-flash",  badge: "result-flash",  label: "Flash" },
   "Travaillé": { bar: "bar-worked", badge: "result-worked", label: "Travaillé" },
-  "Projet":    { bar: "bar-projet", badge: "result-projet", label: "Projet" },
 };
 
 export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {

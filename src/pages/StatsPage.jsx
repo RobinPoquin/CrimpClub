@@ -87,7 +87,7 @@ export default function StatsPage({ ascents, gyms = [] }) {
   ascents.forEach(a => { typeCounts[a.type] = (typeCounts[a.type] || 0) + 1; });
 
   // Résultats
-  const resultCounts = { "À vue": 0, Flash: 0, Travaillé: 0, Projet: 0 };
+  const resultCounts = { Flash: 0, Travaillé: 0 };
   ascents.forEach(a => { if (resultCounts[a.result] !== undefined) resultCounts[a.result]++; });
 
   if (total === 0) {
