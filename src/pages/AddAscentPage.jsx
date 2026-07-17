@@ -4,6 +4,7 @@ import MediaUploader from "../components/MediaUploader";
 import GymColorPicker from "../components/GymColorPicker";
 import LocationInput from "../components/LocationInput";
 import { saveLocation } from "../lib/locations";
+import TagInput from "../components/TagInput";
 
 const GRADES_FRENCH = [
   "3","3+","4","4+","5a","5b","5c",
@@ -37,6 +38,8 @@ function ascentToForm(a) {
     colorHex:   a.colorHex   || null,
     colorName:  a.colorName  || null,
     gradeHint:  a.gradeHint  || null,
+    tags:       a.tags       || [],
+    ropeStyle:  a.ropeStyle  || null,
   };
 }
 
@@ -259,6 +262,34 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
           <textarea rows={3} placeholder="Ressenti, conditions, clé de pas, beta…"
             value={form.comment} onChange={e => set("comment", e.target.value)} />
         </div>
+
+        {/* Tags libres — caractéristiques de la voie */}
+        <div className="field">
+          <label>Tags <span className="optional">(optionnel)</span></label>
+          <TagInput
+            tags={form.tags}
+            onChange={t => set("tags", t)}
+          />
+        </div>
+
+        {/* Moulinette / Tête — uniquement pour les voies (pas le bloc) */}
+        {form.type !== "Bloc" && (
+          <div className="field">
+            <label>Style <span className="optional">(optionnel)</span></label>
+            <div className="pill-group">
+              <button type="button"
+                className={`pill ${form.ropeStyle === "moulinette" ? "pill-active" : ""}`}
+                onClick={() => set("ropeStyle", form.ropeStyle === "moulinette" ? null : "moulinette")}>
+                🔄 Moulinette
+              </button>
+              <button type="button"
+                className={`pill ${form.ropeStyle === "tete" ? "pill-active" : ""}`}
+                onClick={() => set("ropeStyle", form.ropeStyle === "tete" ? null : "tete")}>
+                🧗 En tête
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="field">
           <label>Photo / vidéo <span className="optional">(optionnel)</span></label>

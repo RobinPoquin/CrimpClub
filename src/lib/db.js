@@ -30,6 +30,8 @@ export async function addAscent(userId, form) {
       grade_hint:    form.gradeHint || null,
       photo_urls:    (form.mediaList || []).filter(m => m.type === "photo").map(m => ({ url: m.url, path: m.path })),
       video_urls:    (form.mediaList || []).filter(m => m.type === "video").map(m => ({ url: m.url, path: m.path })),
+      tags:        form.tags       || [],
+      rope_style:  form.ropeStyle  || null,
     })
     .select()
     .single();
@@ -56,6 +58,8 @@ export async function updateAscent(id, form) {
       grade_hint:    form.gradeHint || null,
       photo_urls:    (form.mediaList || []).filter(m => m.type === "photo").map(m => ({ url: m.url, path: m.path })),
       video_urls:    (form.mediaList || []).filter(m => m.type === "video").map(m => ({ url: m.url, path: m.path })),
+      tags:        form.tags       || [],
+      rope_style:  form.ropeStyle  || null,
     })
     .eq("id", id)
     .select()
@@ -138,5 +142,7 @@ function normalise(a) {
       }),
     ],
     createdAt: a.created_at,
+    tags:       a.tags       || [],
+    ropeStyle:  a.rope_style || null,
   };
 }

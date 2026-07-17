@@ -78,6 +78,22 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
 
           {comment && <p className="card-comment">"{comment}"</p>}
 
+          {/* Tags de la voie */}
+          {ascent.tags?.length > 0 && (
+            <div className="card-tags">
+              {ascent.tags.map((tag, i) => (
+                <span key={i} className="card-tag">{tag}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Style : moulinette ou en tête */}
+          {ascent.ropeStyle && (
+            <span className="card-rope-style">
+              {ascent.ropeStyle === "moulinette" ? "🔄 Moulinette" : "🧗 En tête"}
+            </span>
+          )}
+
           {/* Médias */}
           {mediaList.length > 0 && (
             <div className="card-media-grid">
