@@ -99,7 +99,6 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
   }
 
   async function handleGymCreated(gym) {
-    console.log("Gym créé:", gym);
     // Met à jour les gyms locaux immédiatement
     setCurrentGyms(prev => [...prev, gym]);
     // Auto-sélectionne la salle créée
@@ -226,7 +225,7 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
                 gyms={currentGyms}
                 onGymCreated={handleGymCreated}
                 showCreateGym={true}
-                isOutdoor={true}
+                isOutdoor={form.outdoor}
               />
             </div>
           </>

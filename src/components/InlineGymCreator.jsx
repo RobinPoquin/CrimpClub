@@ -8,6 +8,7 @@ const DEFAULT_COLORS = [
   { id: "c3", name: "Bleu",   hex: "#3B82F6", gradeHint: "" },
   { id: "c4", name: "Rouge",  hex: "#EF4444", gradeHint: "" },
   { id: "c5", name: "Noir",   hex: "#18181B", gradeHint: "" },
+  { id: "c6", name: "Violet", hex: "#9833AB", gradeHint: "" },
 ];
 
 function newColor() {
