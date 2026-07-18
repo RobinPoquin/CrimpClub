@@ -13,6 +13,7 @@ import { getAscents, deleteAscent } from "./lib/db";
 import { getGyms } from "./lib/gyms";
 import { supabase } from "./lib/supabase";
 import { getLocations } from "./lib/locations";
+import { getSectors } from "./lib/sectors";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -31,7 +32,8 @@ export default function App() {
   const [editAscent, setEditAscent] = useState(null);
   const [theme, setTheme]           = useState(() => localStorage.getItem("cc_theme") || "light");
   const [locations, setLocations]   = useState([]);
-  const [spots, setSpots] = useState([]);
+  const [spots, setSpots]           = useState([]);
+  const [sectors, setSectors]       = useState([]);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -49,7 +51,7 @@ export default function App() {
 
     getCurrentUser().then((u) => {
       setUser(u);
-      if (u) { loadAscents(u.id); loadGyms(u.id); loadSpots(u.id); }
+      if (u) { loadAscents(u.id); loadGyms(u.id); loadSpots(u.id); loadSectors(u.id); }
       setLoading(false);
     }).catch(() => {
       setUser(null);
@@ -80,6 +82,7 @@ export default function App() {
     loadAscents(u.id);
     loadGyms(u.id);
     loadSpots(u.id);
+    loadSectors(u.id);
     migrateMediaUrls(); // Migration one-shot
     setActiveTab("logbook");
   }
@@ -91,10 +94,17 @@ export default function App() {
     setGyms([]);
   }
 
+  // Charge les secteurs extérieurs mémorisés
+  async function loadSectors(userId) {
+    const data = await getSectors(userId);
+    setSectors(data);
+  }
+
   function handleAscentSaved() {
     loadAscents(user.id);
     loadSpots(user.id);
     loadGyms(user.id);
+    loadSectors(user.id);
     setEditAscent(null);
     setActiveTab("logbook");
   }
@@ -220,6 +230,7 @@ export default function App() {
             gyms={gyms}
             spots={spots}
             locations={locations}
+            sectors={sectors}
             onSaved={handleAscentSaved}
             onCancel={handleCancelForm}
             onGymsChanged={async () => { await loadGyms(user.id); }}

@@ -5,6 +5,8 @@ import GymColorPicker from "../components/GymColorPicker";
 import LocationInput from "../components/LocationInput";
 import { saveLocation } from "../lib/locations";
 import TagInput from "../components/TagInput";
+import { saveSector } from "../lib/sectors";
+import SectorInput from "../components/SectorInput";
 
 const GRADES_FRENCH = [
   "3","3+","4","4+","5a","5b","5c",
@@ -40,12 +42,13 @@ function ascentToForm(a) {
     gradeHint:  a.gradeHint  || null,
     tags:       a.tags       || [],
     ropeStyle:  a.ropeStyle  || null,
+    sector:     a.sector     || null,
   };
 }
 
 const EMPTY = ascentToForm({});
 
-export default function AddAscentPage({ userId, gyms = [], locations = [], spots = [], onSaved, onCancel, onGymsChanged, editAscent = null }) {
+export default function AddAscentPage({ userId, gyms = [], locations = [], spots = [], sectors = [], onSaved, onCancel, onGymsChanged, editAscent = null }) {
   const isEdit = !!editAscent;
   const [form, setForm]     = useState(isEdit ? ascentToForm(editAscent) : EMPTY);
   const [error, setError]   = useState("");
@@ -127,6 +130,10 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
       if (isEdit) await updateAscent(editAscent.id, form);
       else        await addAscent(userId, form);
       await saveLocation(userId, form.location, form.outdoor); // Mémorise le lieu automatiquement
+      // Mémorise le secteur automatiquement si extérieur et secteur renseigné
+      if (form.outdoor && form.sector && form.location) {
+        await saveSector(userId, form.location, form.sector);
+      }
       onSaved();
     } catch (err) {
       setError(err.message);
@@ -240,6 +247,20 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
               />
             </div>
           </>
+        )}
+
+        {/* Secteur — uniquement en extérieur, avec autocomplétion */}
+        {form.outdoor && (
+          <div className="field">
+            <label>Secteur <span className="optional">(optionnel)</span></label>
+            {/* Filtre les secteurs du spot sélectionné */}
+            <SectorInput
+              value={form.sector || ""}
+              onChange={v => set("sector", v)}
+              sectors={sectors.filter(s => s.spot_name === form.location)}
+              placeholder="ex. Escalès"
+            />
+          </div>
         )}
 
         {/* Résultat */}

@@ -65,7 +65,11 @@ export default function AscentCard({ ascent, gyms = [], onEdit, onDelete }) {
 
           <div className="card-meta">
             {location && <span>📍 {location}</span>}
+
+            {/* Secteur affiché après le lieu si renseigné */}
+            {ascent.sector && <span>📌 {ascent.sector}</span>}
             {formattedDate && <span>🗓 {formattedDate}</span>}
+            
             {/* Niveau normalisé affiché uniquement pour les blocs couleur */}
             {colorLevel && (
               <span className="card-color-level" style={{ color: colorLevel.color }}>
