@@ -74,6 +74,14 @@ export default function AddAscentPage({ userId, gyms = [], locations = [], spots
         if (!nowBloc || next.outdoor) {
           next.colorId = null; next.colorHex = null; next.colorName = null; next.gymId = null;
         }
+        // Trad, Grande voie et Deep water solo sont toujours en extérieur
+        if (["Trad", "Grande voie", "Deep water solo"].includes(value)) {
+          next.outdoor = true;
+        }
+        // Bloc et Diff peuvent être en intérieur ou extérieur
+        if (["Bloc", "Diff"].includes(value)) {
+          next.outdoor = false;
+        }
       }
       if (field === "outdoor" && (value === true || next.type !== "Bloc")) {
         next.colorId = null; next.colorHex = null; next.colorName = null;
