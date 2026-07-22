@@ -9,7 +9,7 @@ import SettingsPage from "./pages/SettingsPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SpotManagerPage from "./pages/SpotManagerPage";
 import { getCurrentUser, signOut } from "./lib/auth";
-import { getAscents, deleteAscent } from "./lib/db";
+import { getAscents, getAscentsPaginated, deleteAscent } from "./lib/db";
 import { getGyms } from "./lib/gyms";
 import { supabase } from "./lib/supabase";
 import { getLocations } from "./lib/locations";
@@ -34,6 +34,11 @@ export default function App() {
   const [locations, setLocations]   = useState([]);
   const [spots, setSpots]           = useState([]);
   const [sectors, setSectors]       = useState([]);
+  const [ascentPage, setAscentPage]   = useState(0);   // page courante
+  const [hasMore, setHasMore]         = useState(true); // s'il reste des ascensions à charger
+  const [loadingMore, setLoadingMore] = useState(false); // chargement en cours
+  const [allAscents, setAllAscents] = useState([]); // toutes les ascensions pour les stats
+
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -51,7 +56,7 @@ export default function App() {
 
     getCurrentUser().then((u) => {
       setUser(u);
-      if (u) { loadAscents(u.id); loadGyms(u.id); loadSpots(u.id); loadSectors(u.id); }
+      if (u) { loadAscents(u.id); loadAllAscents(u.id); loadGyms(u.id); loadSpots(u.id); loadSectors(u.id); }
       setLoading(false);
     }).catch(() => {
       setUser(null);
@@ -67,9 +72,35 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Charge la première page d'ascensions
   async function loadAscents(userId) {
-    const data = await getAscents(userId);
+    const data = await getAscentsPaginated(userId, 0);
     setAscents(data);
+    setAscentPage(0);
+    // S'il y a moins de 20 résultats, il n'y a plus rien à charger
+    setHasMore(data.length === 20);
+  }
+
+  // Charge la page suivante et l'ajoute à la liste existante
+  async function loadMoreAscents() {
+
+    if (!hasMore || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const nextPage = ascentPage + 1;
+      const data = await getAscentsPaginated(user?.id, nextPage);
+      setAscents(prev => [...prev, ...data]);
+      setAscentPage(nextPage);
+      setHasMore(data.length === 20);
+    } finally {
+      setLoadingMore(false);
+    }
+  }
+
+  // Charge TOUTES les ascensions pour les stats (sans pagination)
+  async function loadAllAscents(userId) {
+    const data = await getAscents(userId);
+    setAllAscents(data);
   }
 
   async function loadGyms(userId) {
@@ -85,6 +116,7 @@ export default function App() {
     loadSectors(u.id);
     migrateMediaUrls(); // Migration one-shot
     setActiveTab("logbook");
+    loadAllAscents(u.id);
   }
 
   async function handleSignOut() {
@@ -107,6 +139,7 @@ export default function App() {
     loadSectors(user.id);
     setEditAscent(null);
     setActiveTab("logbook");
+    loadAllAscents(u.id);
   }
 
   function handleEdit(ascent) {
@@ -130,7 +163,6 @@ export default function App() {
 
   async function loadSpots(userId) {
     const data = await getLocations(userId);
-      console.log("spots data:", data.filter(l => l.is_outdoor));
 
     // Sépare les spots extérieurs des salles intérieures
     setSpots(data.filter(l => l.is_outdoor));
@@ -222,6 +254,9 @@ export default function App() {
             onAdd={() => { setEditAscent(null); setActiveTab("add"); }}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
+            onLoadMore={loadMoreAscents}
           />
         )}
         {activeTab === "add" && (
@@ -237,11 +272,11 @@ export default function App() {
             editAscent={editAscent}
           />
         )}
-        {activeTab === "stats"   && <StatsPage ascents={ascents} gyms={gyms} />}
+        {activeTab === "stats"   && <StatsPage ascents={allAscents} gyms={gyms} />}
         {activeTab === "profile" && (
           <ProfilePage
             user={user}
-            ascents={ascents}
+            ascents={allAscents}
             spots={spots}
             gyms={gyms}
             onSignOut={handleSignOut}

@@ -18,6 +18,8 @@ export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSi
         <div>
           <h2 className="profile-name">{user.displayName || "Grimpeur"}</h2>
           <p className="profile-email">{user.email}</p>
+          {/* Bio — affichée seulement si renseignée */}
+          {user.bio && <p className="profile-bio">{user.bio}</p>}
         </div>
       </div>
 
@@ -35,6 +37,39 @@ export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSi
           <span className="pstat-label">Sites</span>
         </div>
       </div>
+
+      {/* Aperçu des 3 dernières ascensions */}
+      {ascents.length > 0 && (
+        <div className="profile-recent">
+          <h3 className="profile-section-title">Dernières ascensions</h3>
+          <div className="profile-recent-list">
+            {ascents.slice(0, 3).map(a => (
+              <div key={a.id} className="profile-recent-item">
+                {/* Pastille couleur pour les blocs couleur, cotation sinon */}
+                <div className="profile-recent-grade">
+                  {a.colorHex
+                    ? <span className="profile-recent-dot" style={{ background: a.colorHex }} />
+                    : <span className="profile-recent-text">{a.grade}</span>
+                  }
+                </div>
+                <div className="profile-recent-info">
+                  {/* Nom de la voie ou type si pas de nom */}
+                  <span className="profile-recent-name">
+                    {a.routeName || (a.colorName ? a.colorName : a.type)}
+                  </span>
+                  <span className="profile-recent-meta">
+                    {a.location} · {a.date ? new Date(a.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""}
+                  </span>
+                </div>
+                {/* Badge résultat */}
+                <span className={`card-result ${a.result === "Flash" ? "result-flash" : "result-worked"}`}>
+                  {a.result}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="settings-list">
         <button className="setting-row" onClick={onOpenSettings}>

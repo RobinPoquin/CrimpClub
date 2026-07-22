@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import AscentCard from "../components/AscentCard";
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie"];
 
-export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelete }) {
+export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelete, onLoadMore, hasMore, loadingMore }) {
   const [filter, setFilter] = useState("Tous");
   const [search, setSearch] = useState("");
 
@@ -16,6 +16,30 @@ export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelet
       a.grade?.toLowerCase().includes(search.toLowerCase());
     return matchType && matchSearch;
   });
+
+  // Référence vers le bas de la liste pour détecter le scroll
+  const bottomRef = useRef(null);
+
+  useEffect(() => {
+    // Attend que le sentinel soit dans le DOM
+    const sentinel = bottomRef.current;
+    if (!sentinel) return;
+    
+    const scrollContainer = sentinel.closest(".app-content");
+    
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !loadingMore) {
+          onLoadMore();
+        }
+      },
+      { root: scrollContainer, threshold: 0.1 }
+    );
+    
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+    // Re-exécute quand filtered change pour re-attacher l'observer
+  }, [filtered.length, hasMore, loadingMore, onLoadMore]);
 
   return (
     <div className="page">
@@ -52,11 +76,26 @@ export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelet
           {ascents.length === 0 && <button className="btn-primary" onClick={onAdd}>Ajouter une ascension</button>}
         </div>
       ) : (
-        <div className="ascents-list">
-          {filtered.map((a) => (
-            <AscentCard key={a.id} ascent={a} gyms={gyms} onEdit={onEdit} onDelete={onDelete} />
-          ))}
-        </div>
+        <>
+          <div className="ascents-list">
+            {filtered.map((a) => (
+              <AscentCard key={a.id} ascent={a} gyms={gyms} onEdit={onEdit} onDelete={onDelete} />
+            ))}
+          </div>
+
+          {/* Élément sentinel — déclenche le chargement quand visible */}
+          <div ref={bottomRef} style={{ height: 1 }} />
+
+          {/* Indicateur de chargement */}
+          {loadingMore && (
+            <p className="load-more-indicator">Chargement…</p>
+          )}
+
+          {/* Message fin de liste */}
+          {!hasMore && ascents.length > 0 && (
+            <p className="load-more-end">Toutes les ascensions sont chargées ✓</p>
+          )}
+        </>
       )}
     </div>
   );

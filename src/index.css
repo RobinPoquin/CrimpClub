@@ -1637,3 +1637,103 @@ textarea { resize: vertical; }
   color: var(--text-muted);
   margin-top: 6px;
 }
+
+/* ── Profile bio ─────────────────────────────── */
+.profile-bio {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 6px;
+  line-height: 1.5;
+  font-style: italic;
+}
+
+/* ── Profile recent ascents ──────────────────── */
+.profile-recent {
+  padding: 0 16px 20px;
+}
+
+.profile-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 10px;
+}
+
+.profile-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+
+/* Zone cotation ou pastille couleur */
+.profile-recent-grade {
+  width: 40px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-recent-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: block;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+.profile-recent-text {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--text-primary);
+}
+
+.profile-recent-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-recent-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profile-recent-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Pagination ──────────────────────────────── */
+.load-more-indicator {
+  text-align: center;
+  padding: 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.load-more-end {
+  text-align: center;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}

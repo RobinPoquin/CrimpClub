@@ -5,7 +5,8 @@ export async function getAscents(userId) {
     .from("ascents")
     .select("*")
     .eq("user_id", userId)
-    .order("date", { ascending: false });
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data || []).map(normalise);
 }
@@ -148,4 +149,18 @@ function normalise(a) {
     tags:       a.tags       || [],
     ropeStyle:  a.rope_style || null,
   };
+}
+
+// Charge les ascensions par page (20 par défaut)
+// page 0 = premières 20, page 1 = suivantes 20, etc.
+export async function getAscentsPaginated(userId, page = 0, pageSize = 20) {
+  const { data, error } = await supabase
+    .from("ascents")
+    .select("*")
+    .eq("user_id", userId)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .range(page * pageSize, (page + 1) * pageSize - 1);
+  if (error) throw new Error(error.message);
+  return (data || []).map(normalise);
 }
