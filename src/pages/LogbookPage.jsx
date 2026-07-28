@@ -1,11 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import AscentCard from "../components/AscentCard";
+import ProjectsSection from "../components/ProjectsSection";
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie"];
 
-export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelete, onLoadMore, hasMore, loadingMore }) {
+export default function LogbookPage({ ascents, gyms = [], projects = [], onProjectsChanged, spots = [], locations = [], sectors = [], userId, onAdd, onEdit, onDelete, onLoadMore, hasMore, loadingMore }) {
+
   const [filter, setFilter] = useState("Tous");
   const [search, setSearch] = useState("");
+
+    // Onglet actif : "logbook" ou "projets"
+  const [activeSection, setActiveSection] = useState("logbook");
+
+    // Référence vers le bas de la liste pour détecter le scroll
+  const bottomRef = useRef(null);
 
   const filtered = ascents.filter((a) => {
     const matchType = filter === "Tous" || a.type === filter;
@@ -17,8 +25,7 @@ export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelet
     return matchType && matchSearch;
   });
 
-  // Référence vers le bas de la liste pour détecter le scroll
-  const bottomRef = useRef(null);
+
 
   useEffect(() => {
     // Attend que le sentinel soit dans le DOM
@@ -48,54 +55,89 @@ export default function LogbookPage({ ascents, gyms = [], onAdd, onEdit, onDelet
         <button className="btn-icon" onClick={onAdd} aria-label="Ajouter une ascension">＋</button>
       </div>
 
-      <div className="search-bar">
-        <span className="search-icon">🔍</span>
-        <input
-          type="search"
-          placeholder="Rechercher une voie, un site…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      {/* Onglets Logbook / Projets */}
+      <div className="logbook-tabs">
+        <button className={`logbook-tab ${activeSection === "logbook" ? "logbook-tab-active" : ""}`}
+          onClick={() => setActiveSection("logbook")}>
+          📋 Logbook
+        </button>
+        <button className={`logbook-tab ${activeSection === "projets" ? "logbook-tab-active" : ""}`}
+          onClick={() => setActiveSection("projets")}>
+          🎯 Projets
+          {projects.filter(p => p.status === "en_cours").length > 0 && (
+            <span className="logbook-tab-badge">
+              {projects.filter(p => p.status === "en_cours").length}
+            </span>
+          )}
+        </button>
       </div>
 
-      <div className="filter-chips">
-        {TYPE_FILTERS.map((f) => (
-          <button key={f} className={`chip ${filter === f ? "chip-active" : ""}`} onClick={() => setFilter(f)}>
-            {f}
-          </button>
-        ))}
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="empty-state">
-          <p className="empty-icon">🧗</p>
-          <p className="empty-title">Aucune ascension ici.</p>
-          <p className="empty-sub">
-            {ascents.length === 0 ? "Enregistre ta première voie pour commencer." : "Essaie un autre filtre."}
-          </p>
-          {ascents.length === 0 && <button className="btn-primary" onClick={onAdd}>Ajouter une ascension</button>}
-        </div>
-      ) : (
+      {/* Section Logbook */}
+      {activeSection === "logbook" && (
         <>
-          <div className="ascents-list">
-            {filtered.map((a) => (
-              <AscentCard key={a.id} ascent={a} gyms={gyms} onEdit={onEdit} onDelete={onDelete} />
+          <div className="search-bar">
+            <span className="search-icon">🔍</span>
+            <input
+              type="search"
+              placeholder="Rechercher une voie, un site…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+
+          <div className="filter-chips">
+            {TYPE_FILTERS.map((f) => (
+              <button key={f} className={`chip ${filter === f ? "chip-active" : ""}`} onClick={() => setFilter(f)}>
+                {f}
+              </button>
             ))}
           </div>
 
-          {/* Élément sentinel — déclenche le chargement quand visible */}
-          <div ref={bottomRef} style={{ height: 1 }} />
+          {filtered.length === 0 ? (
+            <div className="empty-state">
+              <p className="empty-icon">🧗</p>
+              <p className="empty-title">Aucune ascension ici.</p>
+              <p className="empty-sub">
+                {ascents.length === 0 ? "Enregistre ta première voie pour commencer." : "Essaie un autre filtre."}
+              </p>
+              {ascents.length === 0 && <button className="btn-primary" onClick={onAdd}>Ajouter une ascension</button>}
+            </div>
+          ) : (
+            <>
+              <div className="ascents-list">
+                {filtered.map((a) => (
+                  <AscentCard key={a.id} ascent={a} gyms={gyms} onEdit={onEdit} onDelete={onDelete} />
+                ))}
+              </div>
 
-          {/* Indicateur de chargement */}
-          {loadingMore && (
-            <p className="load-more-indicator">Chargement…</p>
-          )}
+              {/* Élément sentinel — déclenche le chargement quand visible */}
+              <div ref={bottomRef} style={{ height: 1 }} />
 
-          {/* Message fin de liste */}
-          {!hasMore && ascents.length > 0 && (
-            <p className="load-more-end">Toutes les ascensions sont chargées ✓</p>
+              {/* Indicateur de chargement */}
+              {loadingMore && (
+                <p className="load-more-indicator">Chargement…</p>
+              )}
+
+              {/* Message fin de liste */}
+              {!hasMore && ascents.length > 0 && (
+                <p className="load-more-end">Toutes les ascensions sont chargées ✓</p>
+              )}
+            </>
           )}
         </>
+      )}
+
+      {/* Section Projets */}
+      {activeSection === "projets" && (
+        <ProjectsSection
+          projects={projects}
+          gyms={gyms}
+          userId={userId}
+          spots={spots}
+          locations={locations}
+          sectors={sectors}
+          onChanged={onProjectsChanged}
+        />
       )}
     </div>
   );

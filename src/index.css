@@ -116,7 +116,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px 12px;
+  padding: calc(16px + env(safe-area-inset-top)) 20px 12px;
   background: var(--bg-nav);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -1736,4 +1736,55 @@ textarea { resize: vertical; }
   padding: 16px;
   font-size: 13px;
   color: var(--text-muted);
+}
+
+/* ── Logbook tabs ────────────────────────────── */
+.logbook-tabs {
+  display: flex;
+  margin: 0 16px 12px;
+  gap: 8px;
+}
+
+.logbook-tab {
+  flex: 1;
+  padding: 9px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-input);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+}
+
+.logbook-tab-active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border-color: var(--accent);
+}
+
+/* Badge nombre de projets en cours */
+.logbook-tab-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Compte à rebours objectif sur la carte projet */
+.project-deadline {
+  font-size: 12px;
+  margin-top: 6px;
+  font-weight: 600;
 }

@@ -14,6 +14,7 @@ import { getGyms } from "./lib/gyms";
 import { supabase } from "./lib/supabase";
 import { getLocations } from "./lib/locations";
 import { getSectors } from "./lib/sectors";
+import { getProjects } from "./lib/projects";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -38,6 +39,7 @@ export default function App() {
   const [hasMore, setHasMore]         = useState(true); // s'il reste des ascensions à charger
   const [loadingMore, setLoadingMore] = useState(false); // chargement en cours
   const [allAscents, setAllAscents] = useState([]); // toutes les ascensions pour les stats
+  const [projects, setProjects] = useState([]);
 
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function App() {
 
     getCurrentUser().then((u) => {
       setUser(u);
-      if (u) { loadAscents(u.id); loadAllAscents(u.id); loadGyms(u.id); loadSpots(u.id); loadSectors(u.id); }
+      if (u) { loadAscents(u.id); loadAllAscents(u.id); loadGyms(u.id); loadSpots(u.id); loadSectors(u.id); loadProjects(u.id); }
       setLoading(false);
     }).catch(() => {
       setUser(null);
@@ -126,20 +128,28 @@ export default function App() {
     setGyms([]);
   }
 
+  // Charge tous les projets de l'utilisateur
+  async function loadProjects(userId) {
+    const data = await getProjects(userId);
+    setProjects(data);
+  }
+
   // Charge les secteurs extérieurs mémorisés
   async function loadSectors(userId) {
     const data = await getSectors(userId);
     setSectors(data);
   }
 
-  function handleAscentSaved() {
-    loadAscents(user.id);
-    loadSpots(user.id);
-    loadGyms(user.id);
-    loadSectors(user.id);
+  async function handleAscentSaved() {
+    await Promise.all([
+      loadAscents(user.id),
+      loadAllAscents(user.id),
+      loadSpots(user.id),
+      loadGyms(user.id),
+      loadSectors(user.id),
+    ]);
     setEditAscent(null);
     setActiveTab("logbook");
-    loadAllAscents(u.id);
   }
 
   function handleEdit(ascent) {
@@ -185,6 +195,7 @@ export default function App() {
       onLogin={handleLogin}
       theme={theme}
       onToggleTheme={() => setTheme(t => t === "light" ? "dark" : "light")}
+      loadProjects={u.id}
     />
   );
 
@@ -251,12 +262,24 @@ export default function App() {
           <LogbookPage
             ascents={ascents}
             gyms={gyms}
+            userId={user.id}
+            spots={spots}
+            locations={locations}
+            sectors={sectors}
             onAdd={() => { setEditAscent(null); setActiveTab("add"); }}
             onEdit={handleEdit}
             onDelete={handleDelete}
             hasMore={hasMore}
             loadingMore={loadingMore}
             onLoadMore={loadMoreAscents}
+            projects={projects}
+            onProjectsChanged={async () => {
+              await Promise.all([
+                loadProjects(user.id),
+                loadAscents(user.id),
+                loadAllAscents(user.id),
+              ]);
+            }}
           />
         )}
         {activeTab === "add" && (
