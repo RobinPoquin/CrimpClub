@@ -15,6 +15,8 @@ import { supabase } from "./lib/supabase";
 import { getLocations } from "./lib/locations";
 import { getSectors } from "./lib/sectors";
 import { getProjects } from "./lib/projects";
+import SimcompPage from "./pages/SimcompPage";
+import { canAccessSimcomp } from "./lib/simcomp";
 
 const TABS = [
   { id: "logbook", label: "Logbook", icon: "📋" },
@@ -239,6 +241,14 @@ export default function App() {
     </div>
   );
 
+  if (subPage === "simcomp") return (
+    <div className="app-shell">
+      <main className="app-content">
+        <SimcompPage user={user} onBack={() => setSubPage(null)} />
+      </main>
+    </div>
+  );
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -306,6 +316,7 @@ export default function App() {
             onOpenGyms={() => setSubPage("gyms")}
             onOpenSettings={() => setSubPage("settings")}
             onOpenSpots={() => setSubPage("spots")}
+            onOpenSimcomp={() => setSubPage("simcomp")}
           />
         )}
       </main>

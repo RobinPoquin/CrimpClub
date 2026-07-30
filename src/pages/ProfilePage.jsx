@@ -1,4 +1,6 @@
-export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSignOut, onOpenGyms, onOpenSettings, onOpenSpots }) {
+import { canAccessSimcomp } from "../lib/simcomp";
+
+export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSignOut, onOpenGyms, onOpenSettings, onOpenSpots, onOpenSimcomp }) {
   const initials = user.displayName
     ? user.displayName.slice(0, 2).toUpperCase()
     : user.email.slice(0, 2).toUpperCase();
@@ -96,6 +98,12 @@ export default function ProfilePage({ user, ascents, gyms = [], spots = [], onSi
             {new Date().toLocaleDateString("fr-FR", { month: "long", year: "numeric" })}
           </span>
         </div>
+        {canAccessSimcomp(user.id) && (
+          <button className="setting-row" onClick={onOpenSimcomp}>
+            <span>🏆 SimComp</span>
+            <span className="chevron">›</span>
+          </button>
+        )}
         <button className="setting-row setting-danger" onClick={onSignOut}>
           <span>🚪 Se déconnecter</span>
         </button>
