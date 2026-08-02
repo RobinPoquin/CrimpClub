@@ -1,33 +1,40 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, RefreshControl
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useAscents } from '../../hooks/useAscents';
 import { deleteAscent } from '../../../lib/db';
 import AscentCard from '../../components/ascent/AscentCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
+import { Modal } from 'react-native';
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie"];
 
-export default function LogbookScreen({ route }) {
+export default function LogbookScreen({ route, navigation }) {
   // userId passé depuis la navigation
   const userId = route?.params?.userId;
 
-  const { ascents, loading, loadingMore, hasMore, load, loadMore } = useAscents(userId);
+  const { ascents, loading, loadingMore, hasMore, reload, loadMore } = useAscents(userId);
 
   const [filter, setFilter] = useState("Tous");
   const [search, setSearch] = useState("");
+  const [selectedAscent, setSelectedAscent] = useState(null);
+  const [confirmDelete, setConfirmDelete]   = useState(false);
 
   // Recharge les ascensions à chaque fois qu'on revient sur cet écran
-  useFocusEffect(
-    useCallback(() => {
-      load();
-    }, [load])
-  );
+  useEffect(() => {
+    reload();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      reload();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Filtre les ascensions selon le type et la recherche
   const filtered = ascents.filter(a => {
@@ -45,10 +52,7 @@ export default function LogbookScreen({ route }) {
       <View style={{ paddingHorizontal: spacing.lg }}>
         <AscentCard
           ascent={item}
-          onDelete={async () => {
-            await deleteAscent(item.id);
-            load();
-          }}
+          onMenu={() => setSelectedAscent(item)}
         />
       </View>
     );
@@ -77,14 +81,17 @@ export default function LogbookScreen({ route }) {
         ListFooterComponent={renderFooter}
         style={{ width: '100%' }}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={load} tintColor={colors.accent} />
+          <RefreshControl refreshing={loading} onRefresh={reload} tintColor={colors.accent} />
         }
         ListHeaderComponent={
           <View style={{ flex: 1, width: '100%' }}>
             {/* Header */}
             <View style={styles.header}>
               <Text style={styles.title}>Mon logbook</Text>
-              <TouchableOpacity style={styles.addBtn}>
+              <TouchableOpacity
+                style={styles.addBtn}
+                onPress={() => navigation.navigate('AddAscent', { userId })}
+              >
                 <Text style={styles.addBtnText}>＋</Text>
               </TouchableOpacity>
             </View>
@@ -141,6 +148,92 @@ export default function LogbookScreen({ route }) {
       {loading && (
         <ActivityIndicator color={colors.accent} style={{ marginTop: spacing.xl }} />
       )}
+
+      <Modal
+        visible={!!selectedAscent}
+        transparent
+        animationType="fade"
+        onRequestClose={() => { setSelectedAscent(null); setConfirmDelete(false); }}
+      >
+        {/* Conteneur principal — fond sombre + sheet en bas */}
+        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          
+          {/* Zone transparente cliquable pour fermer */}
+          <TouchableOpacity
+            style={{ flex: 1 }}
+            onPress={() => { setSelectedAscent(null); setConfirmDelete(false); }}
+          />
+
+          {/* Sheet blanc en bas */}
+          <View style={{
+            backgroundColor:      colors.light.bgCard,
+            borderTopLeftRadius:  20,
+            borderTopRightRadius: 20,
+            padding:              spacing.xl,
+            paddingBottom:        spacing.xxl,
+          }}>
+            {/* Poignée */}
+            <View style={{
+              width: 40, height: 4,
+              backgroundColor: colors.light.border,
+              borderRadius:    2,
+              alignSelf:       'center',
+              marginBottom:    spacing.lg,
+            }} />
+
+            {/* Titre — cotation ou couleur + nom de la voie */}
+            <Text style={{ fontSize: typography.xl, fontWeight: typography.black, marginBottom: spacing.lg }}>
+              {selectedAscent?.grade || selectedAscent?.colorName || '?'}
+              {selectedAscent?.routeName ? ` — ${selectedAscent.routeName}` : ''}
+            </Text>
+
+            {/* Bouton modifier */}
+            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.light.border }}
+              onPress={() => {
+                setSelectedAscent(null);
+                navigation.navigate('EditAscent', { ascent: selectedAscent, userId });
+              }}
+            >
+              <Text style={{ fontSize: 20 }}>✏️</Text>
+              <Text style={{ fontSize: typography.base, fontWeight: typography.medium, color: colors.light.textPrimary }}>Modifier l'ascension</Text>
+            </TouchableOpacity>
+
+            {/* Bouton supprimer — demande confirmation au 2e appui */}
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+                paddingVertical:   spacing.md,
+                backgroundColor:   confirmDelete ? '#FEE2E2' : 'transparent',
+                borderRadius:      confirmDelete ? radius.md : 0,
+                paddingHorizontal: confirmDelete ? spacing.md : 0,
+                marginTop:         spacing.xs,
+              }}
+              onPress={async () => {
+                if (!confirmDelete) { setConfirmDelete(true); return; }
+                await deleteAscent(selectedAscent.id);
+                setSelectedAscent(null);
+                setConfirmDelete(false);
+                reload();
+              }}
+            >
+              <Text style={{ fontSize: 20 }}>🗑️</Text>
+              <Text style={{ fontSize: typography.base, fontWeight: typography.medium, color: colors.danger }}>
+                {confirmDelete ? "Confirmer la suppression" : "Supprimer"}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Bouton annuler */}
+            <TouchableOpacity
+              style={{ marginTop: spacing.md, padding: spacing.md, backgroundColor: colors.light.bgInput, borderRadius: radius.md, alignItems: 'center' }}
+              onPress={() => { setSelectedAscent(null); setConfirmDelete(false); }}
+            >
+              <Text style={{ fontSize: typography.base, fontWeight: typography.semibold, color: colors.light.textSecondary }}>Annuler</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }

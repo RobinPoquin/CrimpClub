@@ -116,6 +116,16 @@ export async function migrateMediaUrls() {
 }
 
 function normalise(a) {
+  const mediaList = [
+    ...(a.photo_urls || []).map(m => {
+      const obj = typeof m === "string" ? JSON.parse(m) : m;
+      return { url: obj.url, path: obj.path, type: "photo" };
+    }),
+    ...(a.video_urls || []).map(m => {
+      const obj = typeof m === "string" ? JSON.parse(m) : m;
+      return { url: obj.url, path: obj.path, type: "video" };
+    }),
+  ];  
   return {
     id:        a.id,
     userId:    a.user_id,
@@ -135,19 +145,10 @@ function normalise(a) {
     gradeHint: a.grade_hint,
     photoUrls: a.photo_urls || [],
     videoUrls: a.video_urls || [],
-    mediaList: [
-      ...(a.photo_urls || []).map(m => {
-        const obj = typeof m === "string" ? JSON.parse(m) : m;
-        return { url: obj.url, path: obj.path, type: "photo" };
-      }),
-      ...(a.video_urls || []).map(m => {
-        const obj = typeof m === "string" ? JSON.parse(m) : m;
-        return { url: obj.url, path: obj.path, type: "video" };
-      }),
-    ],
+    mediaList,
     createdAt: a.created_at,
-    tags:       a.tags       || [],
-    ropeStyle:  a.rope_style || null,
+    tags:      a.tags       || [],
+    ropeStyle: a.rope_style || null,
   };
 }
 

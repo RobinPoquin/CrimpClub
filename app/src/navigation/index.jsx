@@ -7,6 +7,7 @@ import { colors } from '../theme';
 import LogbookScreen  from '../screens/logbook/LogbookScreen';
 import StatsScreen    from '../screens/stats/StatsScreen';
 import ProfileScreen  from '../screens/profile/ProfileScreen';
+import AddAscentScreen from '../screens/logbook/AddAscentScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -59,11 +60,9 @@ export default function Navigation({ user }) {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen
-          name="Main"
-          component={MainTabs}
-          initialParams={{ user }}
-        />
+        <Stack.Screen name="Main"       component={MainTabs}       initialParams={{ user }} />
+        <Stack.Screen name="AddAscent"  component={AddAscentScreen} />
+        <Stack.Screen name="EditAscent" component={AddAscentScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

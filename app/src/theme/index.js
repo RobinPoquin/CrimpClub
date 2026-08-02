@@ -14,6 +14,10 @@ export const colors = {
   flash:       "#3B82F6",
   worked:      "#F59E0B",
 
+  //Tags
+  accentDim:  "#DCFCE7",
+  accentText: "#15803D",
+
   // Niveaux couleur normalisés
   n1: "#FACC15", // jaune
   n2: "#22C55E", // vert

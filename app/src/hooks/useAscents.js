@@ -1,35 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { getAscentsPaginated, getAscents } from '../../lib/db';
 
-// Hook qui gère le chargement paginé des ascensions
-// Retourne les ascensions, l'état de chargement et les fonctions de contrôle
 export function useAscents(userId) {
   const [ascents, setAscents]         = useState([]);
-  const [allAscents, setAllAscents]   = useState([]); // pour les stats
+  const [allAscents, setAllAscents]   = useState([]);
   const [loading, setLoading]         = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore]         = useState(true);
   const [page, setPage]               = useState(0);
+  const [refresh, setRefresh]         = useState(0); // compteur pour forcer le rechargement
 
-  // Charge la première page + toutes les ascensions pour les stats
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [paginated, all] = await Promise.all([
-        getAscentsPaginated(userId, 0),
-        getAscents(userId),
-      ]);
-      setAscents(paginated);
-      setAllAscents(all);
-      setPage(0);
-      setHasMore(paginated.length === 20);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!userId) return;
+    async function load() {
+      setLoading(true);
+      try {
+        const [paginated, all] = await Promise.all([
+          getAscentsPaginated(userId, 0),
+          getAscents(userId),
+        ]);
+        setAscents(paginated);
+        setAllAscents(all);
+        setPage(0);
+        setHasMore(paginated.length === 20);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [userId]);
+    load();
+  }, [userId, refresh]); // se relance quand refresh change
 
-  // Charge la page suivante
-  const loadMore = useCallback(async () => {
+  async function loadMore() {
     if (!hasMore || loadingMore) return;
     setLoadingMore(true);
     try {
@@ -41,11 +42,10 @@ export function useAscents(userId) {
     } finally {
       setLoadingMore(false);
     }
-  }, [userId, page, hasMore, loadingMore]);
+  }
 
-  useEffect(() => {
-    if (userId) load();
-  }, [userId]);
+  // Incrémente refresh pour forcer le rechargement
+  function reload() { setRefresh(r => r + 1); }
 
-  return { ascents, allAscents, loading, loadingMore, hasMore, load, loadMore };
+  return { ascents, allAscents, loading, loadingMore, hasMore, reload, loadMore };
 }

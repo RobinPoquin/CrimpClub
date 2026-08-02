@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { colors, typography, spacing, radius } from '../../theme';
+import { useState } from 'react';
 
 // Couleurs de la barre latérale selon le résultat
 const RESULT_COLORS = {
@@ -13,10 +14,13 @@ const RESULT_BADGE = {
   "Travaillé": { bg: "#FEF3C7", text: "#92400E" },
 };
 
-export default function AscentCard({ ascent, onDelete }) {
+export default function AscentCard({ ascent, onMenu }) {
   const hasColor   = ascent.colorHex && !ascent.outdoor;
   const barColor   = hasColor ? ascent.colorHex : (RESULT_COLORS[ascent.result] || colors.warn);
   const badgeStyle = RESULT_BADGE[ascent.result] || { bg: colors.light.bgInput, text: colors.light.textMuted };
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const formattedDate = ascent.date
     ? new Date(ascent.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
@@ -30,30 +34,35 @@ export default function AscentCard({ ascent, onDelete }) {
       <View style={styles.body}>
         {/* Ligne du haut : cotation + résultat */}
         <View style={styles.top}>
-          <View style={styles.gradeBlock}>
-            {hasColor ? (
-              <View style={styles.colorGrade}>
-                <View style={[styles.colorDot, { backgroundColor: ascent.colorHex }]} />
-                <Text style={styles.colorName}>{ascent.colorName}</Text>
-                {ascent.gradeHint && (
-                  <Text style={styles.gradeHint}>{ascent.gradeHint}</Text>
-                )}
-              </View>
-            ) : (
-              <Text style={styles.grade}>{ascent.grade}</Text>
-            )}
-            {ascent.routeName && (
-              <Text style={styles.routeName}>{ascent.routeName}</Text>
-            )}
-          </View>
+        <View style={styles.gradeBlock}>
+          {hasColor ? (
+            <View style={styles.colorGrade}>
+              <View style={[styles.colorDot, { backgroundColor: ascent.colorHex }]} />
+              <Text style={styles.colorName}>{ascent.colorName}</Text>
+              {ascent.gradeHint && (
+                <Text style={styles.gradeHint}>{ascent.gradeHint}</Text>
+              )}
+            </View>
+          ) : (
+            <Text style={styles.grade}>{ascent.grade}</Text>
+          )}
+          {ascent.routeName && (
+            <Text style={styles.routeName}>{ascent.routeName}</Text>
+          )}
+        </View>
 
-          {/* Badge résultat */}
+        {/* Badge résultat + bouton menu */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
           <View style={[styles.badge, { backgroundColor: badgeStyle.bg }]}>
             <Text style={[styles.badgeText, { color: badgeStyle.text }]}>
               {ascent.result}
             </Text>
           </View>
+          <TouchableOpacity onPress={onMenu} style={styles.menuBtn}>
+            <Text style={styles.menuBtnText}>⋯</Text>
+          </TouchableOpacity>
         </View>
+      </View>
 
         {/* Chips type + extérieur */}
         <View style={styles.chips}>
@@ -93,27 +102,18 @@ export default function AscentCard({ ascent, onDelete }) {
           </View>
         )}
 
-        {/* Médias — photos et vidéos de l'ascension */}
-        {ascent.mediaList?.length > 0 && (
-        <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: spacing.sm }}
-        >
-            {ascent.mediaList.map((m, i) =>
-            m.type === "photo" ? (
-                <Image
-                key={i}
-                source={{ uri: m.url }}
-                style={styles.mediaThumbnail}
-                />
-            ) : (
+        {ascent.mediaList?.filter(m => m.url).length > 0 && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.sm }}>
+            {ascent.mediaList.filter(m => m.url).map((m, i) =>
+              m.type === "photo" ? (
+                <Image key={i} source={{ uri: m.url }} style={styles.mediaThumbnail} />
+              ) : (
                 <View key={i} style={styles.videoThumb}>
-                <Text style={{ fontSize: 24 }}>🎥</Text>
+                  <Text style={{ fontSize: 24 }}>🎥</Text>
                 </View>
-            )
+              )
             )}
-        </ScrollView>
+          </ScrollView>
         )}
       </View>
     </View>
@@ -269,5 +269,19 @@ const styles = StyleSheet.create({
     alignItems:      'center',
     justifyContent:  'center',
     marginRight:     spacing.sm,
+  },
+    menuBtn: {
+    width:           28,
+    height:          28,
+    borderRadius:    14,
+    backgroundColor: colors.light.bgInput,
+    alignItems:      'center',
+    justifyContent:  'center',
+    marginLeft:      spacing.xs,
+  },
+  menuBtnText: {
+    fontSize:      16,
+    color:         colors.light.textMuted,
+    letterSpacing: 1,
   },
 });

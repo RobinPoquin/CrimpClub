@@ -197,7 +197,6 @@ export default function App() {
       onLogin={handleLogin}
       theme={theme}
       onToggleTheme={() => setTheme(t => t === "light" ? "dark" : "light")}
-      loadProjects={u.id}
     />
   );
 
