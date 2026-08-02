@@ -4,6 +4,7 @@ import Navigation from './src/navigation';
 import AuthNavigator from './src/navigation/AuthNavigator';
 import { supabase } from './lib/supabase';
 import { colors } from './src/theme';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function App() {
   const [user, setUser]       = useState(null);
@@ -34,5 +35,9 @@ export default function App() {
   }
 
   // Si connecté → app principale, sinon → auth
-  return user ? <Navigation user={user} /> : <AuthNavigator />;
+  return (
+    <SafeAreaProvider>
+      {user ? <Navigation user={user} /> : <AuthNavigator />}
+    </SafeAreaProvider>
+  );
 }
