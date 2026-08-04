@@ -11,6 +11,7 @@ import { uploadMedia } from '../../../lib/storage';
 import { getGyms } from '../../../lib/gyms';
 import { getLocations } from '../../../lib/locations';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTheme } from '../../theme/ThemeContext';
 
 const GRADES_FRENCH = [
   "3","3+","4","4+","5a","5b","5c",
@@ -63,6 +64,9 @@ export default function AddAscentScreen({ navigation, route }) {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const { palette } = useTheme();
+  const styles = makeStyles(palette);
 
   // Pré-remplit le formulaire si on est en mode édition
   const [form, setForm] = useState(editAscent ? {
@@ -246,7 +250,7 @@ export default function AddAscentScreen({ navigation, route }) {
           <TextInput
             style={styles.input}
             placeholder={form.outdoor ? "ex. Gorges du Verdon" : "ex. Arkose Nation"}
-            placeholderTextColor={colors.light.textMuted}
+            placeholderTextColor={palette.textMuted}
             value={form.location}
             onChangeText={v => { set("location", v); setShowSuggestions(true); }}
             onFocus={() => setShowSuggestions(true)}
@@ -259,7 +263,7 @@ export default function AddAscentScreen({ navigation, route }) {
               top:             48,
               left:            0,
               right:           0,
-              backgroundColor: colors.light.bgCard,
+              backgroundColor: palette.bgCard,
               borderWidth:     1.5,
               borderColor:     colors.accent,
               borderRadius:    radius.md,
@@ -275,7 +279,7 @@ export default function AddAscentScreen({ navigation, route }) {
                     gap:               spacing.sm,
                     padding:           spacing.md,
                     borderBottomWidth: i < suggestions.length - 1 ? 1 : 0,
-                    borderBottomColor: colors.light.border,
+                    borderBottomColor: palette.border,
                   }}
                   onPress={() => {
                     set("location", s.name);
@@ -283,7 +287,7 @@ export default function AddAscentScreen({ navigation, route }) {
                   }}
                 >
                   <Text style={{ fontSize: 16 }}>{s.icon}</Text>
-                  <Text style={{ fontSize: typography.base, color: colors.light.textPrimary }}>{s.name}</Text>
+                  <Text style={{ fontSize: typography.base, color: palette.textPrimary }}>{s.name}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -297,7 +301,7 @@ export default function AddAscentScreen({ navigation, route }) {
             <TextInput
               style={styles.input}
               placeholder="ex. Escalès"
-              placeholderTextColor={colors.light.textMuted}
+              placeholderTextColor={palette.textMuted}
               value={form.sector}
               onChangeText={v => set("sector", v)}
             />
@@ -324,7 +328,7 @@ export default function AddAscentScreen({ navigation, route }) {
           style={styles.input}
           onPress={() => setShowDatePicker(true)}
         >
-          <Text style={{ color: colors.light.textPrimary, fontSize: typography.base }}>
+          <Text style={{ color: palette.textPrimary, fontSize: typography.base }}>
             {new Date(form.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </Text>
         </TouchableOpacity>
@@ -349,7 +353,7 @@ export default function AddAscentScreen({ navigation, route }) {
         <TextInput
           style={styles.input}
           placeholder="ex. La Directe"
-          placeholderTextColor={colors.light.textMuted}
+          placeholderTextColor={palette.textMuted}
           value={form.routeName}
           onChangeText={v => set("routeName", v)}
         />
@@ -377,7 +381,7 @@ export default function AddAscentScreen({ navigation, route }) {
         <TextInput
           style={[styles.input, styles.textarea]}
           placeholder="Ressenti, conditions, clé de pas, beta…"
-          placeholderTextColor={colors.light.textMuted}
+          placeholderTextColor={palette.textMuted}
           value={form.comment}
           onChangeText={v => set("comment", v)}
           multiline
@@ -443,165 +447,167 @@ export default function AddAscentScreen({ navigation, route }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.light.bg,
-  },
-  header: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
-    paddingVertical:   spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.light.border,
-  },
-  cancelBtn: {
-    fontSize:  typography.base,
-    color:     colors.accent,
-    fontWeight: typography.semibold,
-  },
-  title: {
-    fontSize:   typography.lg,
-    fontWeight: typography.black,
-    color:      colors.light.textPrimary,
-  },
-  form: {
-    padding: spacing.xl,
-  },
-  label: {
-    fontSize:     typography.sm,
-    fontWeight:   typography.semibold,
-    color:        colors.light.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  optional: {
-    fontWeight: typography.regular,
-    color:      colors.light.textMuted,
-  },
-  input: {
-    backgroundColor: colors.light.bgInput,
-    borderWidth:     1.5,
-    borderColor:     colors.light.border,
-    borderRadius:    radius.md,
-    padding:         spacing.md,
-    fontSize:        typography.base,
-    color:           colors.light.textPrimary,
-    marginBottom:    spacing.md,
-  },
-  textarea: {
-    height:     100,
-    textAlignVertical: 'top',
-  },
-  pillGroup: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           spacing.sm,
-    marginBottom:  spacing.md,
-  },
-  pill: {
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.xs + 2,
-    borderRadius:      radius.full,
-    borderWidth:       1.5,
-    borderColor:       colors.light.border,
-    backgroundColor:   colors.light.bgInput,
-  },
-  pillActive: {
-    backgroundColor: colors.accent,
-    borderColor:     colors.accent,
-  },
-  pillText: {
-    fontSize:   typography.sm,
-    fontWeight: typography.semibold,
-    color:      colors.light.textSecondary,
-  },
-  pillTextActive: {
-    color: '#fff',
-  },
-  toggleRow: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-    marginBottom:   spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  toggleLabel: {
-    fontSize:   typography.base,
-    fontWeight: typography.semibold,
-    color:      colors.light.textPrimary,
-  },
-  toggleSub: {
-    fontSize: typography.xs,
-    color:    colors.light.textMuted,
-    marginTop: 2,
-  },
-  error: {
-    fontSize:        typography.sm,
-    color:           colors.danger,
-    backgroundColor: '#FEE2E2',
-    borderRadius:    radius.md,
-    padding:         spacing.md,
-    marginBottom:    spacing.md,
-  },
-  saveBtn: {
-    backgroundColor: colors.accent,
-    borderRadius:    radius.md,
-    padding:         spacing.md,
-    alignItems:      'center',
-    shadowColor:     colors.accent,
-    shadowOffset:    { width: 0, height: 2 },
-    shadowOpacity:   0.3,
-    shadowRadius:    6,
-    elevation:       4,
-    marginTop:       spacing.md,
-  },
-  saveBtnDisabled: {
-    backgroundColor: colors.light.textMuted,
-    shadowOpacity:   0,
-    elevation:       0,
-  },
-  saveBtnText: {
-    color:      '#fff',
-    fontSize:   typography.base,
-    fontWeight: typography.bold,
-  },
-  tagsWrap: {
-  marginBottom: spacing.md,
-  },
-  selectedTags: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           spacing.xs,
-    marginBottom:  spacing.sm,
-  },
-  tagSelected: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   3,
-    backgroundColor:   colors.accentDim || '#DCFCE7',
-    borderRadius:      radius.full,
-  },
-  tagSelectedText: {
-    fontSize:   typography.xs,
-    fontWeight: typography.semibold,
-    color:      colors.accentText,
-  },
-  tagSuggestions: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           spacing.xs,
-  },
-  tagSuggestion: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   3,
-    borderRadius:      radius.full,
-    borderWidth:       1,
-    borderColor:       colors.light.border,
-    backgroundColor:   colors.light.bgCard,
-  },
-  tagSuggestionText: {
-    fontSize: typography.xs,
-    color:    colors.light.textSecondary,
-  },
-});
+function makeStyles(palette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.bg,
+    },
+    header: {
+      flexDirection:  'row',
+      alignItems:     'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.xl,
+      paddingVertical:   spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: palette.border,
+    },
+    cancelBtn: {
+      fontSize:  typography.base,
+      color:     colors.accent,
+      fontWeight: typography.semibold,
+    },
+    title: {
+      fontSize:   typography.lg,
+      fontWeight: typography.black,
+      color:      palette.textPrimary,
+    },
+    form: {
+      padding: spacing.xl,
+    },
+    label: {
+      fontSize:     typography.sm,
+      fontWeight:   typography.semibold,
+      color:        palette.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    optional: {
+      fontWeight: typography.regular,
+      color:      palette.textMuted,
+    },
+    input: {
+      backgroundColor: palette.bgInput,
+      borderWidth:     1.5,
+      borderColor:     palette.border,
+      borderRadius:    radius.md,
+      padding:         spacing.md,
+      fontSize:        typography.base,
+      color:           palette.textPrimary,
+      marginBottom:    spacing.md,
+    },
+    textarea: {
+      height:     100,
+      textAlignVertical: 'top',
+    },
+    pillGroup: {
+      flexDirection: 'row',
+      flexWrap:      'wrap',
+      gap:           spacing.sm,
+      marginBottom:  spacing.md,
+    },
+    pill: {
+      paddingHorizontal: spacing.md,
+      paddingVertical:   spacing.xs + 2,
+      borderRadius:      radius.full,
+      borderWidth:       1.5,
+      borderColor:       palette.border,
+      backgroundColor:   palette.bgInput,
+    },
+    pillActive: {
+      backgroundColor: colors.accent,
+      borderColor:     colors.accent,
+    },
+    pillText: {
+      fontSize:   typography.sm,
+      fontWeight: typography.semibold,
+      color:      palette.textSecondary,
+    },
+    pillTextActive: {
+      color: '#fff',
+    },
+    toggleRow: {
+      flexDirection:  'row',
+      justifyContent: 'space-between',
+      alignItems:     'center',
+      marginBottom:   spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    toggleLabel: {
+      fontSize:   typography.base,
+      fontWeight: typography.semibold,
+      color:      palette.textPrimary,
+    },
+    toggleSub: {
+      fontSize: typography.xs,
+      color:    palette.textMuted,
+      marginTop: 2,
+    },
+    error: {
+      fontSize:        typography.sm,
+      color:           colors.danger,
+      backgroundColor: '#FEE2E2',
+      borderRadius:    radius.md,
+      padding:         spacing.md,
+      marginBottom:    spacing.md,
+    },
+    saveBtn: {
+      backgroundColor: colors.accent,
+      borderRadius:    radius.md,
+      padding:         spacing.md,
+      alignItems:      'center',
+      shadowColor:     colors.accent,
+      shadowOffset:    { width: 0, height: 2 },
+      shadowOpacity:   0.3,
+      shadowRadius:    6,
+      elevation:       4,
+      marginTop:       spacing.md,
+    },
+    saveBtnDisabled: {
+      backgroundColor: palette.textMuted,
+      shadowOpacity:   0,
+      elevation:       0,
+    },
+    saveBtnText: {
+      color:      '#fff',
+      fontSize:   typography.base,
+      fontWeight: typography.bold,
+    },
+    tagsWrap: {
+    marginBottom: spacing.md,
+    },
+    selectedTags: {
+      flexDirection: 'row',
+      flexWrap:      'wrap',
+      gap:           spacing.xs,
+      marginBottom:  spacing.sm,
+    },
+    tagSelected: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical:   3,
+      backgroundColor:   colors.accentDim || '#DCFCE7',
+      borderRadius:      radius.full,
+    },
+    tagSelectedText: {
+      fontSize:   typography.xs,
+      fontWeight: typography.semibold,
+      color:      colors.accentText,
+    },
+    tagSuggestions: {
+      flexDirection: 'row',
+      flexWrap:      'wrap',
+      gap:           spacing.xs,
+    },
+    tagSuggestion: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical:   3,
+      borderRadius:      radius.full,
+      borderWidth:       1,
+      borderColor:       palette.border,
+      backgroundColor:   palette.bgCard,
+    },
+    tagSuggestionText: {
+      fontSize: typography.xs,
+      color:    palette.textSecondary,
+    },
+  });
+}

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, RefreshControl
+  StyleSheet, ActivityIndicator, RefreshControl,
+  Image
 } from 'react-native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useAscents } from '../../hooks/useAscents';
@@ -10,6 +11,9 @@ import AscentCard from '../../components/ascent/AscentCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ScrollView } from 'react-native';
 import { Modal } from 'react-native';
+import { useTheme } from '../../theme/ThemeContext';
+import Header from '../../components/common/Header';
+
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie"];
 
@@ -18,6 +22,9 @@ export default function LogbookScreen({ route, navigation }) {
   const userId = route?.params?.userId;
 
   const { ascents, loading, loadingMore, hasMore, reload, loadMore } = useAscents(userId);
+  const { theme, toggleTheme, palette } = useTheme();
+  const styles = makeStyles(palette);
+
 
   const [filter, setFilter] = useState("Tous");
   const [search, setSearch] = useState("");
@@ -70,7 +77,7 @@ export default function LogbookScreen({ route, navigation }) {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: palette.bgCard }]} edges={['top']}>
       <FlatList
         data={filtered}
         keyExtractor={item => item.id}
@@ -79,33 +86,36 @@ export default function LogbookScreen({ route, navigation }) {
         onEndReached={loadMore}
         onEndReachedThreshold={0.3}
         ListFooterComponent={renderFooter}
-        style={{ width: '100%' }}
+        style={{ width: '100%', backgroundColor: palette.bg }}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={reload} tintColor={colors.accent} />
         }
         ListHeaderComponent={
           <View style={{ flex: 1, width: '100%' }}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.title}>Mon logbook</Text>
-              <TouchableOpacity
-                style={styles.addBtn}
-                onPress={() => navigation.navigate('AddAscent', { userId })}
-              >
-                <Text style={styles.addBtnText}>＋</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Barre de recherche */}
-            <View style={styles.searchBar}>
-              <Text style={styles.searchIcon}>🔍</Text>
-              <TextInput
-                style={styles.searchInput}
-                placeholder="Rechercher une voie, un site…"
-                placeholderTextColor={colors.light.textMuted}
-                value={search}
-                onChangeText={setSearch}
+            {/* Header + recherche avec fond commun et bordure en bas */}
+            <View style={{ backgroundColor: palette.bgCard }}>
+              <Header
+                theme={theme}
+                onToggleTheme={toggleTheme}
+                palette={palette}
+                rightComponent={
+                  <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddAscent', { userId })}>
+                    <Text style={styles.addBtnText}>＋</Text>
+                  </TouchableOpacity>
+                }
               />
+              </View>
+              <View style={{ backgroundColor: palette.bg, paddingTop: spacing.md }}>
+                <View style={styles.searchBar}>
+                  <Text style={styles.searchIcon}>🔍</Text>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher une voie, un site…"
+                    placeholderTextColor={palette.textMuted}
+                    value={search}
+                    onChangeText={setSearch}
+                  />
+              </View>
             </View>
 
             {/* Filtres */}
@@ -113,7 +123,7 @@ export default function LogbookScreen({ route, navigation }) {
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.filterList}
-              style={{ marginBottom: spacing.sm }}
+              style={{ marginBottom: spacing.sm, height: 60 }}
             >
               {TYPE_FILTERS.map(item => (
                 <TouchableOpacity
@@ -238,115 +248,126 @@ export default function LogbookScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.light.bg,
-    overflow: 'visible',
-  },
-  header: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop:     spacing.xl,
-    paddingBottom:  spacing.md,
-  },
-  title: {
-    fontSize:   typography.xxl,
-    fontWeight: typography.black,
-    letterSpacing: -0.5,
-    color: colors.light.textPrimary,
-  },
-  addBtn: {
-    width:  36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.accent,
-    alignItems:      'center',
-    justifyContent:  'center',
-    shadowColor:    colors.accent,
-    shadowOffset:   { width: 0, height: 2 },
-    shadowOpacity:  0.35,
-    shadowRadius:   6,
-    elevation:      4,
-  },
-  addBtnText: {
-    fontSize:   22,
-    color:      '#fff',
-    lineHeight: 26,
-  },
-  searchBar: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    backgroundColor: colors.light.bgInput,
-    borderRadius:   radius.md,
-    marginHorizontal: spacing.lg,
-    marginBottom:   spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderWidth:    1.5,
-    borderColor:    colors.light.border,
-  },
-  searchIcon: {
-    fontSize: 15,
-    marginRight: spacing.sm,
-  },
-  searchInput: {
-    flex:     1,
-    fontSize: typography.base,
-    color:    colors.light.textPrimary,
-    paddingVertical: spacing.sm,
-  },
-  filterList: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom:     spacing.sm,
-    paddingTop:        spacing.xs,
-    gap: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical:   spacing.sm,
-    borderRadius:      radius.full,
-    borderWidth:       1.5,
-    borderColor:       colors.light.border,
-    backgroundColor:   colors.light.bgCard,
-    alignSelf:         'flex-start',
-  },
-  chipActive: {
-    backgroundColor: colors.accent,
-    borderColor:     colors.accent,
-  },
-  chipText: {
-    fontSize:   typography.sm,
-    fontWeight: typography.semibold,
-    color:      colors.light.textSecondary,
-  },
-  chipTextActive: {
-    color: '#fff',
-  },
-  list: {
-    paddingBottom:     spacing.lg,
-    gap:               spacing.sm,
-  },
-  emptyState: {
-    flex:           1,
-    alignItems:     'center',
-    justifyContent: 'center',
-    padding:        spacing.xl,
-  },
-  emptyIcon: {
-    fontSize:     48,
-    marginBottom: spacing.sm,
-  },
-  emptyTitle: {
-    fontSize:     typography.md,
-    fontWeight:   typography.bold,
-    color:        colors.light.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  emptySubtitle: {
-    fontSize: typography.sm,
-    color:    colors.light.textSecondary,
-    textAlign: 'center',
-  },
-});
+function makeStyles(palette) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: palette.bg,
+      overflow: 'visible',
+    },
+    header: {
+      flexDirection:  'row',
+      justifyContent: 'space-between',
+      alignItems:     'center',
+      paddingHorizontal: spacing.lg,
+      paddingTop:     spacing.xl,
+      paddingBottom:  spacing.md,
+    },
+    brand: {
+      flexDirection: 'row',
+      alignItems:    'center',
+      gap:           spacing.sm,
+    },
+    logo: {
+      width:  28,
+      height: 28,
+    },
+    brandName: {
+      fontSize:      typography.lg,
+      fontWeight:    typography.black,
+      letterSpacing: -0.5,
+      color:         palette.textPrimary,
+    },
+    addBtn: {
+      width:           36,
+      height:          36,
+      borderRadius:    18,
+      backgroundColor: colors.accent,
+      alignItems:      'center',
+      justifyContent:  'center',
+      shadowColor:     colors.accent,
+      shadowOffset:    { width: 0, height: 2 },
+      shadowOpacity:   0.35,
+      shadowRadius:    6,
+      elevation:       4,
+    },
+    addBtnText: {
+      fontSize:   22,
+      color:      '#fff',
+      lineHeight: 26,
+    },
+    searchBar: {
+      flexDirection:     'row',
+      alignItems:        'center',
+      backgroundColor:   palette.bgInput,
+      borderRadius:      radius.md,
+      marginHorizontal:  spacing.lg,
+      marginBottom:      spacing.sm,
+      paddingHorizontal: spacing.lg,
+      borderWidth:       1.5,
+      borderColor:       palette.border,
+    },
+    searchIcon: {
+      fontSize:    15,
+      marginRight: spacing.sm,
+    },
+    searchInput: {
+      flex:            1,
+      fontSize:        typography.base,
+      color:           palette.textPrimary,
+      paddingVertical: spacing.sm,
+    },
+    filterList: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom:     spacing.sm,
+      paddingTop:        spacing.xs,
+      gap:               spacing.sm,
+    },
+    chip: {
+      paddingHorizontal: spacing.md,
+      paddingVertical:   spacing.sm,
+      borderRadius:      radius.full,
+      borderWidth:       1.5,
+      borderColor:       palette.border,
+      backgroundColor:   palette.bgCard,
+      alignSelf:         'flex-start',
+    },
+    chipActive: {
+      backgroundColor: colors.accent,
+      borderColor:     colors.accent,
+    },
+    chipText: {
+      fontSize:   typography.sm,
+      fontWeight: typography.semibold,
+      color:      palette.textSecondary,
+    },
+    chipTextActive: {
+      color: '#fff',
+    },
+    list: {
+      paddingBottom: spacing.lg,
+      gap:           spacing.sm,
+    },
+    emptyState: {
+      flex:           1,
+      alignItems:     'center',
+      justifyContent: 'center',
+      padding:        spacing.xl,
+    },
+    emptyIcon: {
+      fontSize:     48,
+      marginBottom: spacing.sm,
+    },
+    emptyTitle: {
+      fontSize:     typography.md,
+      fontWeight:   typography.bold,
+      color:        palette.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    emptySubtitle: {
+      fontSize:  typography.sm,
+      color:     palette.textSecondary,
+      textAlign: 'center',
+    },
+  });
+}

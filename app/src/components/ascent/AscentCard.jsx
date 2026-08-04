@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useState } from 'react';
+import { useTheme } from '../../theme/ThemeContext';
 
 // Couleurs de la barre latérale selon le résultat
 const RESULT_COLORS = {
@@ -21,6 +22,9 @@ export default function AscentCard({ ascent, onMenu }) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const { palette } = useTheme();
+  const styles = makeStyles(palette);
 
   const formattedDate = ascent.date
     ? new Date(ascent.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
@@ -120,168 +124,170 @@ export default function AscentCard({ ascent, onMenu }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection:   'row',
-    backgroundColor: colors.light.bgCard,
-    borderRadius:    radius.lg,
-    borderWidth:     1,
-    borderColor:     colors.light.border,
-    overflow:        'hidden',
-    marginBottom:    spacing.sm,
-  },
-  bar: {
-    width: 5,
-  },
-  body: {
-    flex:    1,
-    padding: spacing.md,
-  },
-  top: {
-    flexDirection:  'row',
-    justifyContent: 'space-between',
-    alignItems:     'flex-start',
-    marginBottom:   spacing.sm,
-  },
-  gradeBlock: {
-    flexDirection: 'row',
-    alignItems:    'baseline',
-    gap:           spacing.sm,
-    flex:          1,
-  },
-  grade: {
-    fontSize:      typography.hero,
-    fontWeight:    typography.black,
-    letterSpacing: -1,
-    color:         colors.light.textPrimary,
-    lineHeight:    36,
-  },
-  colorGrade: {
-    flexDirection: 'row',
-    alignItems:    'center',
-    gap:           spacing.sm,
-  },
-  colorDot: {
-    width:        20,
-    height:       20,
-    borderRadius: 10,
-  },
-  colorName: {
-    fontSize:   typography.xl,
-    fontWeight: typography.black,
-    color:      colors.light.textPrimary,
-  },
-  gradeHint: {
-    fontSize: typography.sm,
-    color:    colors.light.textMuted,
-  },
-  routeName: {
-    fontSize:   typography.base,
-    fontWeight: typography.semibold,
-    color:      colors.light.textPrimary,
-    flex:       1,
-  },
-  badge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   4,
-    borderRadius:      radius.full,
-    flexShrink:        0,
-  },
-  badgeText: {
-    fontSize:   typography.xs,
-    fontWeight: typography.bold,
-  },
-  chips: {
-    flexDirection: 'row',
-    gap:           spacing.xs,
-    marginBottom:  spacing.xs,
-    flexWrap:      'wrap',
-  },
-  chipType: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   3,
-    backgroundColor:   '#DCFCE7',
-    borderRadius:      radius.full,
-  },
-  chipTypeText: {
-    fontSize:   typography.xs,
-    fontWeight: typography.bold,
-    color:      colors.accentText,
-  },
-  chipOutdoor: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   3,
-    backgroundColor:   '#FEF9C3',
-    borderRadius:      radius.full,
-  },
-  chipOutdoorText: {
-    fontSize:   typography.xs,
-    fontWeight: typography.bold,
-    color:      '#713F12',
-  },
-  meta: {
-    flexDirection: 'row',
-    gap:           spacing.md,
-    flexWrap:      'wrap',
-    marginBottom:  spacing.xs,
-  },
-  metaText: {
-    fontSize: typography.xs,
-    color:    colors.light.textMuted,
-  },
-  comment: {
-    fontSize:    typography.sm,
-    color:       colors.light.textSecondary,
-    fontStyle:   'italic',
-    borderLeftWidth: 3,
-    borderLeftColor: colors.light.border,
-    paddingLeft: spacing.sm,
-    marginTop:   spacing.sm,
-  },
-  tags: {
-    flexDirection: 'row',
-    flexWrap:      'wrap',
-    gap:           spacing.xs,
-    marginTop:     spacing.sm,
-  },
-  tag: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical:   2,
-    backgroundColor:   colors.light.bgInput,
-    borderRadius:      radius.full,
-  },
-  tagText: {
-    fontSize: typography.xs,
-    color:    colors.light.textMuted,
-    fontWeight: typography.semibold,
-  },
+function makeStyles(palette) {
+  return StyleSheet.create({
+    card: {
+      flexDirection:   'row',
+      backgroundColor: palette.bgCard,
+      borderRadius:    radius.lg,
+      borderWidth:     1,
+      borderColor:     palette.border,
+      overflow:        'hidden',
+      marginBottom:    spacing.sm,
+    },
+    bar: {
+      width: 5,
+    },
+    body: {
+      flex:    1,
+      padding: spacing.md,
+    },
+    top: {
+      flexDirection:  'row',
+      justifyContent: 'space-between',
+      alignItems:     'flex-start',
+      marginBottom:   spacing.sm,
+    },
+    gradeBlock: {
+      flexDirection: 'row',
+      alignItems:    'baseline',
+      gap:           spacing.sm,
+      flex:          1,
+    },
+    grade: {
+      fontSize:      typography.hero,
+      fontWeight:    typography.black,
+      letterSpacing: -1,
+      color:         palette.textPrimary,
+      lineHeight:    36,
+    },
+    colorGrade: {
+      flexDirection: 'row',
+      alignItems:    'center',
+      gap:           spacing.sm,
+    },
+    colorDot: {
+      width:        20,
+      height:       20,
+      borderRadius: 10,
+    },
+    colorName: {
+      fontSize:   typography.xl,
+      fontWeight: typography.black,
+      color:      palette.textPrimary,
+    },
+    gradeHint: {
+      fontSize: typography.sm,
+      color:    palette.textMuted,
+    },
+    routeName: {
+      fontSize:   typography.base,
+      fontWeight: typography.semibold,
+      color:      palette.textPrimary,
+      flex:       1,
+    },
+    badge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical:   4,
+      borderRadius:      radius.full,
+      flexShrink:        0,
+    },
+    badgeText: {
+      fontSize:   typography.xs,
+      fontWeight: typography.bold,
+    },
+    chips: {
+      flexDirection: 'row',
+      gap:           spacing.xs,
+      marginBottom:  spacing.xs,
+      flexWrap:      'wrap',
+    },
+    chipType: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical:   3,
+      backgroundColor:   '#DCFCE7',
+      borderRadius:      radius.full,
+    },
+    chipTypeText: {
+      fontSize:   typography.xs,
+      fontWeight: typography.bold,
+      color:      colors.accentText,
+    },
+    chipOutdoor: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical:   3,
+      backgroundColor:   '#FEF9C3',
+      borderRadius:      radius.full,
+    },
+    chipOutdoorText: {
+      fontSize:   typography.xs,
+      fontWeight: typography.bold,
+      color:      '#713F12',
+    },
+    meta: {
+      flexDirection: 'row',
+      gap:           spacing.md,
+      flexWrap:      'wrap',
+      marginBottom:  spacing.xs,
+    },
+    metaText: {
+      fontSize: typography.xs,
+      color:    palette.textMuted,
+    },
+    comment: {
+      fontSize:        typography.sm,
+      color:           palette.textSecondary,
+      fontStyle:       'italic',
+      borderLeftWidth: 3,
+      borderLeftColor: palette.border,
+      paddingLeft:     spacing.sm,
+      marginTop:       spacing.sm,
+    },
+    tags: {
+      flexDirection: 'row',
+      flexWrap:      'wrap',
+      gap:           spacing.xs,
+      marginTop:     spacing.sm,
+    },
+    tag: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical:   2,
+      backgroundColor:   palette.bgInput,
+      borderRadius:      radius.full,
+    },
+    tagText: {
+      fontSize:   typography.xs,
+      color:      palette.textMuted,
+      fontWeight: typography.semibold,
+    },
     mediaThumbnail: {
-    width:        80,
-    height:       80,
-    borderRadius: radius.sm,
-    marginRight:  spacing.sm,
-  },
+      width:        80,
+      height:       80,
+      borderRadius: radius.sm,
+      marginRight:  spacing.sm,
+    },
     videoThumb: {
-    width:           80,
-    height:          80,
-    borderRadius:    radius.sm,
-    backgroundColor: colors.light.bgInput,
-    alignItems:      'center',
-    justifyContent:  'center',
-    marginRight:     spacing.sm,
-  },
+      width:           80,
+      height:          80,
+      borderRadius:    radius.sm,
+      backgroundColor: palette.bgInput,
+      alignItems:      'center',
+      justifyContent:  'center',
+      marginRight:     spacing.sm,
+    },
     menuBtn: {
-    width:           28,
-    height:          28,
-    borderRadius:    14,
-    backgroundColor: colors.light.bgInput,
-    alignItems:      'center',
-    justifyContent:  'center',
-    marginLeft:      spacing.xs,
-  },
-  menuBtnText: {
-    fontSize:      16,
-    color:         colors.light.textMuted,
-    letterSpacing: 1,
-  },
-});
+      width:           28,
+      height:          28,
+      borderRadius:    14,
+      backgroundColor: palette.bgInput,
+      alignItems:      'center',
+      justifyContent:  'center',
+      marginLeft:      spacing.xs,
+    },
+    menuBtnText: {
+      fontSize:      16,
+      color:         palette.textMuted,
+      letterSpacing: 1,
+    },
+  });
+}

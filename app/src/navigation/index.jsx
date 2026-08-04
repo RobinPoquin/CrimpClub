@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Text } from 'react-native';
 import { colors } from '../theme';
+import { useTheme } from '../theme/ThemeContext';
 
 import LogbookScreen  from '../screens/logbook/LogbookScreen';
 import StatsScreen    from '../screens/stats/StatsScreen';
@@ -15,18 +16,19 @@ const Stack = createNativeStackNavigator();
 // Onglets principaux — reçoit user depuis Stack.Screen
 function MainTabs({ route }) {
   const user = route?.params?.user;
+  const { palette } = useTheme();
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.light.bgCard,
-          borderTopColor:  colors.light.border,
+          backgroundColor: palette.bgCard,
+          borderTopColor:  palette.border,
         },
         tabBarHideOnKeyboard: true,
         tabBarActiveTintColor:   colors.accent,
-        tabBarInactiveTintColor: colors.light.textMuted,
+        tabBarInactiveTintColor: palette.textMuted,
         tabBarLabelStyle: {
           fontSize:   11,
           fontWeight: '600',

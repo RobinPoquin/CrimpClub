@@ -7,9 +7,13 @@ import * as ImagePicker from 'expo-image-picker';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import { colors, typography, spacing, radius } from '../../theme';
 import { uploadMedia } from '../../../lib/storage';
+import { useTheme } from '../../theme/ThemeContext';
 
 export default function MediaUploader({ userId, mediaList = [], onChange }) {
   const [uploading, setUploading] = useState(false);
+
+  const { palette } = useTheme();
+  const styles = makeStyles(palette);
 
   // Demande la permission d'accès à la galerie
   async function requestPermission() {
@@ -135,74 +139,76 @@ export default function MediaUploader({ userId, mediaList = [], onChange }) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    marginBottom: spacing.md,
-  },
-  btns: {
-    flexDirection: 'row',
-    gap:           spacing.sm,
-  },
-  btn: {
-    flex:            1,
-    padding:         spacing.md,
-    backgroundColor: colors.light.bgInput,
-    borderWidth:     1.5,
-    borderStyle:     'dashed',
-    borderColor:     colors.light.border,
-    borderRadius:    radius.md,
-    alignItems:      'center',
-    minHeight:       48,
-    justifyContent:  'center',
-  },
-  btnText: {
-    fontSize:   typography.sm,
-    fontWeight: typography.semibold,
-    color:      colors.light.textSecondary,
-  },
-  preview: {
-    position:    'relative',
-    marginRight: spacing.sm,
-    width:       80,
-    height:      80,
-  },
-  previewImg: {
-    width:        80,
-    height:       80,
-    borderRadius: radius.sm,
-  },
-  videoPreview: {
-    width:           80,
-    height:          80,
-    borderRadius:    radius.sm,
-    backgroundColor: colors.light.bgInput,
-    alignItems:      'center',
-    justifyContent:  'center',
-    overflow:        'hidden',
-  },
-  playIcon: {
-    position:        'absolute',
-    width:           28,
-    height:          28,
-    borderRadius:    14,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  removeBtn: {
-    position:        'absolute',
-    top:             -6,
-    right:           -6,
-    width:           20,
-    height:          20,
-    borderRadius:    10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems:      'center',
-    justifyContent:  'center',
-  },
-  removeBtnText: {
-    color:      '#fff',
-    fontSize:   10,
-    fontWeight: 'bold',
-  },
-});
+function makeStyles(palette) {
+  return StyleSheet.create({
+    wrap: {
+      marginBottom: spacing.md,
+    },
+    btns: {
+      flexDirection: 'row',
+      gap:           spacing.sm,
+    },
+    btn: {
+      flex:            1,
+      padding:         spacing.md,
+      backgroundColor: palette.bgInput,
+      borderWidth:     1.5,
+      borderStyle:     'dashed',
+      borderColor:     palette.border,
+      borderRadius:    radius.md,
+      alignItems:      'center',
+      minHeight:       48,
+      justifyContent:  'center',
+    },
+    btnText: {
+      fontSize:   typography.sm,
+      fontWeight: typography.semibold,
+      color:      palette.textSecondary,
+    },
+    preview: {
+      position:    'relative',
+      marginRight: spacing.sm,
+      width:       80,
+      height:      80,
+    },
+    previewImg: {
+      width:        80,
+      height:       80,
+      borderRadius: radius.sm,
+    },
+    videoPreview: {
+      width:           80,
+      height:          80,
+      borderRadius:    radius.sm,
+      backgroundColor: palette.bgInput,
+      alignItems:      'center',
+      justifyContent:  'center',
+      overflow:        'hidden',
+    },
+    playIcon: {
+      position:        'absolute',
+      width:           28,
+      height:          28,
+      borderRadius:    14,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      alignItems:      'center',
+      justifyContent:  'center',
+    },
+    removeBtn: {
+      position:        'absolute',
+      top:             -6,
+      right:           -6,
+      width:           20,
+      height:          20,
+      borderRadius:    10,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      alignItems:      'center',
+      justifyContent:  'center',
+    },
+    removeBtnText: {
+      color:      '#fff',
+      fontSize:   10,
+      fontWeight: 'bold',
+    },
+  });
+}

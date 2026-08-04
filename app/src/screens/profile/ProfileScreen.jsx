@@ -14,4 +14,6 @@ export default function ProfileScreen() {
       </TouchableOpacity>
     </View>
   );
+
+  <Header theme={theme} onToggleTheme={toggleTheme} />
 }

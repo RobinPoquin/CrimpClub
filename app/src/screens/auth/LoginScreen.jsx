@@ -6,12 +6,16 @@ import {
 } from 'react-native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { signIn } from '../../../lib/auth';
+import { useTheme } from '../../theme/ThemeContext';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
+
+  const { palette } = useTheme();
+  const styles = makeStyles(palette);
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -63,7 +67,7 @@ export default function LoginScreen({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="toi@email.com"
-            placeholderTextColor={colors.light.textMuted}
+            placeholderTextColor={palette.textMuted}
             value={email}
             onChangeText={t => { setEmail(t); setError(''); }}
             keyboardType="email-address"
@@ -75,7 +79,7 @@ export default function LoginScreen({ navigation }) {
           <TextInput
             style={styles.input}
             placeholder="••••••••"
-            placeholderTextColor={colors.light.textMuted}
+            placeholderTextColor={palette.textMuted}
             value={password}
             onChangeText={t => { setPassword(t); setError(''); }}
             secureTextEntry
@@ -118,102 +122,104 @@ export default function LoginScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexGrow: 1,
-    backgroundColor: colors.light.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xl,
-  },
-  logo: {
-    width: 80,
-    height: 80,
-    marginBottom: spacing.md,
-  },
-  title: {
-    fontSize: typography.xxl,
-    fontWeight: typography.black,
-    letterSpacing: -1,
-    color: colors.light.textPrimary,
-    marginBottom: spacing.xs,
-  },
-  subtitle: {
-    fontSize: typography.base,
-    color: colors.light.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  quote: {
-    fontSize: typography.xs,
-    color: colors.light.textMuted,
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginBottom: spacing.xl,
-    lineHeight: 18,
-  },
-  form: {
-    width: '100%',
-  },
-  label: {
-    fontSize: typography.sm,
-    fontWeight: typography.semibold,
-    color: colors.light.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.light.bgInput,
-    borderWidth: 1.5,
-    borderColor: colors.light.border,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    fontSize: typography.base,
-    color: colors.light.textPrimary,
-    marginBottom: spacing.md,
-  },
-  error: {
-    fontSize: typography.sm,
-    color: colors.danger,
-    backgroundColor: '#FEE2E2',
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  btn: {
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  btnDisabled: {
-    backgroundColor: colors.light.textMuted,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: typography.base,
-    fontWeight: typography.bold,
-  },
-  linkWrap: {
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  link: {
-    color: colors.accent,
-    fontSize: typography.sm,
-  },
-  switchWrap: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
-  switchText: {
-    fontSize: typography.sm,
-    color: colors.light.textSecondary,
-  },
-});
+function makeStyles(palette) {
+  return StyleSheet.create({
+    container: {
+      flexGrow: 1,
+      backgroundColor: palette.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: spacing.xl,
+    },
+    logo: {
+      width: 80,
+      height: 80,
+      marginBottom: spacing.md,
+    },
+    title: {
+      fontSize: typography.xxl,
+      fontWeight: typography.black,
+      letterSpacing: -1,
+      color: palette.textPrimary,
+      marginBottom: spacing.xs,
+    },
+    subtitle: {
+      fontSize: typography.base,
+      color: palette.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    quote: {
+      fontSize: typography.xs,
+      color: palette.textMuted,
+      fontStyle: 'italic',
+      textAlign: 'center',
+      marginBottom: spacing.xl,
+      lineHeight: 18,
+    },
+    form: {
+      width: '100%',
+    },
+    label: {
+      fontSize: typography.sm,
+      fontWeight: typography.semibold,
+      color: palette.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    input: {
+      backgroundColor: palette.bgInput,
+      borderWidth: 1.5,
+      borderColor: palette.border,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      fontSize: typography.base,
+      color: palette.textPrimary,
+      marginBottom: spacing.md,
+    },
+    error: {
+      fontSize: typography.sm,
+      color: colors.danger,
+      backgroundColor: '#FEE2E2',
+      borderRadius: radius.md,
+      padding: spacing.md,
+      marginBottom: spacing.md,
+    },
+    btn: {
+      backgroundColor: colors.accent,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      alignItems: 'center',
+      marginBottom: spacing.md,
+      shadowColor: colors.accent,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 6,
+      elevation: 4,
+    },
+    btnDisabled: {
+      backgroundColor: palette.textMuted,
+      shadowOpacity: 0,
+      elevation: 0,
+    },
+    btnText: {
+      color: '#fff',
+      fontSize: typography.base,
+      fontWeight: typography.bold,
+    },
+    linkWrap: {
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    link: {
+      color: colors.accent,
+      fontSize: typography.sm,
+    },
+    switchWrap: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+    },
+    switchText: {
+      fontSize: typography.sm,
+      color: palette.textSecondary,
+    },
+  });
+}

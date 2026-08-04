@@ -5,6 +5,10 @@ import AuthNavigator from './src/navigation/AuthNavigator';
 import { supabase } from './lib/supabase';
 import { colors } from './src/theme';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ThemeProvider } from './src/theme/ThemeContext';
+import { StatusBar } from 'expo-status-bar';
+import ThemedStatusBar from './src/components/common/ThemedStatusBar';
+
 
 export default function App() {
   const [user, setUser]       = useState(null);
@@ -36,8 +40,11 @@ export default function App() {
 
   // Si connecté → app principale, sinon → auth
   return (
-    <SafeAreaProvider>
-      {user ? <Navigation user={user} /> : <AuthNavigator />}
-    </SafeAreaProvider>
+    <ThemeProvider>
+      <SafeAreaProvider>
+        <ThemedStatusBar />
+        {user ? <Navigation user={user} /> : <AuthNavigator />}
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 }
