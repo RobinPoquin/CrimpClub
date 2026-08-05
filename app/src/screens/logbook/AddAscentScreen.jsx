@@ -68,6 +68,8 @@ export default function AddAscentScreen({ navigation, route }) {
   const { palette } = useTheme();
   const styles = makeStyles(palette);
 
+  const [lastGymId, setLastGymId] = useState(editAscent?.gymId || null);
+
   // Pré-remplit le formulaire si on est en mode édition
   const [form, setForm] = useState(editAscent ? {
     type:      editAscent.type      || "Diff",
@@ -96,7 +98,8 @@ export default function AddAscentScreen({ navigation, route }) {
         getLocations(userId),
       ]);
       setGyms(g);
-      setLocations(l.filter(loc => loc.is_outdoor === form.outdoor));
+      // Garde toutes les locations sans filtrer
+      setLocations(l);
     }
     if (userId) load();
   }, [userId]);
@@ -112,10 +115,18 @@ export default function AddAscentScreen({ navigation, route }) {
         if (["Bloc", "Diff"].includes(value)) {
           next.outdoor = false;
         }
+        
         // Reset cotation si changement bloc/voie
         const wasBloc = f.type === "Bloc";
         const nowBloc = value === "Bloc";
         if (wasBloc !== nowBloc) next.grade = nowBloc ? "6A" : "6a";
+        // Reset tous les champs liés à la salle et couleurs
+        next.colorId   = null;
+        next.colorHex  = null;
+        next.colorName = null;
+        next.gymId     = null;
+        next.gradeHint = null;
+        next.location  = "";
         if (!nowBloc) {
           next.colorId = null; next.colorHex = null;
           next.colorName = null; next.gymId = null;
@@ -170,17 +181,24 @@ export default function AddAscentScreen({ navigation, route }) {
 
   // Suggestions filtrées selon la saisie et le type (intérieur/extérieur)
   const suggestions = [
-    // Salles si intérieur
-    ...(!form.outdoor ? gyms.map(g => ({ name: g.name, icon: '🏟️' })) : []),
-    // Spots si extérieur
-    ...(form.outdoor ? locations.map(l => ({ name: l.name, icon: '🌿' })) : []),
+    ...(!form.outdoor ? gyms
+      .filter(g => (g.types || []).includes(form.type.toLowerCase()))
+      .map(g => ({ name: g.name, icon: '🏟️' })) : []),
+    ...(form.outdoor 
+      ? locations.filter(l => l.is_outdoor).map(l => ({ name: l.name, icon: '🌿' })) 
+      : []),
   ].filter(s => 
     s.name.toLowerCase().includes(form.location.toLowerCase())
   );
 
   const isBloc     = form.type === "Bloc";
   const grades     = isBloc ? GRADES_BLOC : GRADES_FRENCH;
-  const colorMode  = isBloc && !form.outdoor;
+
+  const [blocMode, setBlocMode] = useState(
+    editAscent?.colorId ? 'color' : 'grade'
+  );
+
+  const colorMode = isBloc && !form.outdoor && blocMode === 'color';
   
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -224,23 +242,116 @@ export default function AddAscentScreen({ navigation, route }) {
           />
         </View>
 
+        {/* Choix du système de cotation pour les blocs intérieurs */}
+        {isBloc && !form.outdoor && (
+          <View style={{ marginBottom: spacing.md }}>
+            <Text style={styles.label}>Système de cotation</Text>
+            <View style={styles.pillGroup}>
+              <TouchableOpacity
+                style={[styles.pill, blocMode === 'color' && styles.pillActive]}
+                onPress={() => {
+                  setBlocMode('color');
+                  if (lastGymId) {
+                    set('gymId', lastGymId);
+                    const gym = gyms.find(g => g.id === lastGymId);
+                    if (gym) set('location', gym.name);
+                  }
+                }}
+              >
+                <Text style={[styles.pillText, blocMode === 'color' && styles.pillTextActive]}>🎨 Couleurs</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.pill, blocMode === 'grade' && styles.pillActive]}
+                onPress={() => { setBlocMode('grade'); set('colorId', null); set('colorHex', null); set('colorName', null); set('gymId', null); set('gradeHint', null); }}
+              >
+                <Text style={[styles.pillText, blocMode === 'grade' && styles.pillTextActive]}>🔢 Cotation</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Cotation */}
         {!colorMode && (
           <>
             <Text style={styles.label}>Cotation</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md, height: 50 }}>
               <View style={styles.pillGroup}>
                 {grades.map(g => (
                   <TouchableOpacity
                     key={g}
                     style={[styles.pill, form.grade === g && styles.pillActive]}
-                    onPress={() => set("grade", g)}
+                    onPress={() => set('grade', g)}
                   >
                     <Text style={[styles.pillText, form.grade === g && styles.pillTextActive]}>{g}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
+          </>
+        )}
+
+        {/* Sélecteur de couleurs — bloc intérieur */}
+        {colorMode && (
+          <>
+            {/* Pastilles de couleur de la salle sélectionnée via l'autocomplétion */}
+            {form.gymId && (() => {
+              const gym = gyms.find(g => g.id === form.gymId);
+              if (!gym?.colors?.length) return null;
+              return (
+                <>
+                  <Text style={styles.label}>Couleur du bloc</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md }}>
+                    {gym.colors.map(c => (
+                      <TouchableOpacity
+                        key={c.id}
+                        onPress={() => {
+                          setBlocMode('color');
+                          set('colorId', c.id);
+                          set('colorHex', c.hex);
+                          set('colorName', c.name);
+                          set('gradeHint', c.gradeHint || null);
+                          set('grade', c.gradeHint || form.grade);
+
+                          // Restaure la dernière salle sélectionnée
+                          if (lastGymId) set('gymId', lastGymId);
+                        }}
+                        style={{
+                          width:           44,
+                          height:          44,
+                          borderRadius:    22,
+                          backgroundColor: c.hex,
+                          borderWidth:     form.colorId === c.id ? 3 : 0,
+                          borderColor:     '#fff',
+                          alignItems:      'center',
+                          justifyContent:  'center',
+                          shadowColor:     '#000',
+                          shadowOffset:    { width: 0, height: 2 },
+                          shadowOpacity:   0.3,
+                          shadowRadius:    4,
+                          elevation:       4,
+                        }}
+                      >
+                        {form.colorId === c.id && (
+                          <Text style={{ color: '#fff', fontSize: 18, fontWeight: 'bold' }}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Nom + cotation indicative */}
+                  {form.colorId && (() => {
+                    const sel = gym.colors.find(c => c.id === form.colorId);
+                    return sel ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+                        <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: sel.hex }} />
+                        <Text style={{ color: palette.textPrimary, fontWeight: typography.semibold }}>{sel.name}</Text>
+                        {sel.gradeHint && <Text style={{ color: palette.textMuted }}>· ~{sel.gradeHint}</Text>}
+                      </View>
+                    ) : null;
+                  })()}
+                </>
+              );
+            })()}
           </>
         )}
 
@@ -283,6 +394,12 @@ export default function AddAscentScreen({ navigation, route }) {
                   }}
                   onPress={() => {
                     set("location", s.name);
+                    // Si c'est une salle, setter aussi gymId pour afficher les couleurs
+                    const gym = gyms.find(g => g.name === s.name);
+                    if (gym) {
+                      set("gymId", gym.id);
+                      setLastGymId(gym.id); 
+                    }
                     setShowSuggestions(false);
                   }}
                 >
