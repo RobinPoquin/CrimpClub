@@ -1,7 +1,8 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useState } from 'react';
 import { useTheme } from '../../theme/ThemeContext';
+import VideoPlayer from './VideoPlayer';
 
 // Couleurs de la barre latérale selon le résultat
 const RESULT_COLORS = {
@@ -22,13 +23,14 @@ export default function AscentCard({ ascent, onMenu }) {
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // { url, type }
 
   const { palette } = useTheme();
   const styles = makeStyles(palette);
 
   const formattedDate = ascent.date
     ? new Date(ascent.date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
-    : "";
+    : ""; 
 
   return (
     <View style={styles.card}>
@@ -110,16 +112,54 @@ export default function AscentCard({ ascent, onMenu }) {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.sm }}>
             {ascent.mediaList.filter(m => m.url).map((m, i) =>
               m.type === "photo" ? (
-                <Image key={i} source={{ uri: m.url }} style={styles.mediaThumbnail} />
+                /* Tap sur la photo → ouvre la lightbox */
+                <TouchableOpacity key={i} onPress={() => setLightbox({ url: m.url, type: 'photo' })}>
+                  <Image source={{ uri: m.url }} style={styles.mediaThumbnail} />
+                </TouchableOpacity>
               ) : (
-                <View key={i} style={styles.videoThumb}>
+                /* Tap sur la vidéo → ouvre la lightbox */
+                <TouchableOpacity key={i} onPress={() => setLightbox({ url: m.url, type: 'video' })}
+                  style={styles.videoThumb}>
                   <Text style={{ fontSize: 24 }}>🎥</Text>
-                </View>
+                </TouchableOpacity>
               )
             )}
           </ScrollView>
         )}
       </View>
+
+      {/* Lightbox plein écran */}
+        <Modal
+          visible={!!lightbox}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setLightbox(null)}
+        >
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', alignItems: 'center', justifyContent: 'center' }}>
+            
+            {/* Bouton fermer */}
+            <TouchableOpacity
+              style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
+              onPress={() => setLightbox(null)}
+            >
+              <Text style={{ color: '#fff', fontSize: 18 }}>✕</Text>
+            </TouchableOpacity>
+
+            {/* Photo */}
+            {lightbox?.type === 'photo' && (
+              <Image
+                source={{ uri: lightbox.url }}
+                style={{ width: '100%', height: '80%' }}
+                resizeMode="contain"
+              />
+            )}
+
+            {/* Vidéo */}
+            {lightbox?.type === 'video' && (
+              <VideoPlayer url={lightbox.url} />
+            )}
+          </View>
+        </Modal>
     </View>
   );
 }
