@@ -9,6 +9,8 @@ import LogbookScreen  from '../screens/logbook/LogbookScreen';
 import StatsScreen    from '../screens/stats/StatsScreen';
 import ProfileScreen  from '../screens/profile/ProfileScreen';
 import AddAscentScreen from '../screens/logbook/AddAscentScreen';
+import AddProjectScreen   from '../screens/projects/AddProjectScreen';
+import ProjectDetailScreen from '../screens/projects/ProjectDetailScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -65,6 +67,8 @@ export default function Navigation({ user }) {
         <Stack.Screen name="Main"       component={MainTabs}       initialParams={{ user }} />
         <Stack.Screen name="AddAscent"  component={AddAscentScreen} />
         <Stack.Screen name="EditAscent" component={AddAscentScreen} />
+        <Stack.Screen name="AddProject"     component={AddProjectScreen} />
+        <Stack.Screen name="ProjectDetail"  component={ProjectDetailScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

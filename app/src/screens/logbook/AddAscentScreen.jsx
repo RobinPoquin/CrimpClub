@@ -65,7 +65,7 @@ export default function AddAscentScreen({ navigation, route }) {
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  const { palette } = useTheme();
+  const { palette, theme } = useTheme();
   const styles = makeStyles(palette);
 
   const [lastGymId, setLastGymId] = useState(editAscent?.gymId || null);
@@ -458,6 +458,7 @@ export default function AddAscentScreen({ navigation, route }) {
             display="inline"
             locale="fr-FR"
             maximumDate={new Date()}
+            themeVariant={theme === 'dark' ? 'dark' : 'light'}
             onChange={(event, date) => {
               setShowDatePicker(false);
               if (date) set("date", date.toISOString().split("T")[0]);

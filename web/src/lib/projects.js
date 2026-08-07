@@ -67,7 +67,6 @@ export async function getProjects(userId) {
 
 // Crée un nouveau projet
 export async function addProject(userId, form) {
-  console.log("addProject userId:", userId);
   const { data, error } = await supabase
     .from("projects")
     .insert({

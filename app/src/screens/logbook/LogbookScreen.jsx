@@ -1,19 +1,19 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   StyleSheet, ActivityIndicator, RefreshControl,
-  Image
+  Image, ScrollView, Modal
 } from 'react-native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useAscents } from '../../hooks/useAscents';
 import { deleteAscent } from '../../../lib/db';
 import AscentCard from '../../components/ascent/AscentCard';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ScrollView } from 'react-native';
-import { Modal } from 'react-native';
 import { useTheme } from '../../theme/ThemeContext';
 import Header from '../../components/common/Header';
-
+import { getProjects } from '../../../lib/projects';
+import ProjectCard from '../../components/project/ProjectCard';
+import { useFocusEffect } from '@react-navigation/native';
 
 const TYPE_FILTERS = ["Tous", "Bloc", "Diff", "Trad", "Grande voie"];
 
@@ -31,6 +31,12 @@ export default function LogbookScreen({ route, navigation }) {
   const [selectedAscent, setSelectedAscent] = useState(null);
   const [confirmDelete, setConfirmDelete]   = useState(false);
 
+  const [activeTab, setActiveTab] = useState('logbook'); // 'logbook' | 'projets'
+  const [projects, setProjects] = useState([]);
+
+  // Sous-onglet de la section projets
+  const [projectTab, setProjectTab] = useState('en_cours');
+
   // Recharge les ascensions à chaque fois qu'on revient sur cet écran
   useEffect(() => {
     reload();
@@ -42,6 +48,18 @@ export default function LogbookScreen({ route, navigation }) {
     });
     return unsubscribe;
   }, [navigation]);
+
+  // Recharge les projets quand on revient sur l'écran
+  useFocusEffect(
+    useCallback(() => {
+      async function loadProjects() {
+        if (!userId) return;
+        const data = await getProjects(userId);
+        setProjects(data);
+      }
+      loadProjects();
+    }, [userId])
+  );
 
   // Filtre les ascensions selon le type et la recherche
   const filtered = ascents.filter(a => {
@@ -55,6 +73,16 @@ export default function LogbookScreen({ route, navigation }) {
 
   // Rendu de chaque carte d'ascension
   function renderItem({ item }) {
+    if (activeTab === 'projets') {
+      return (
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          <ProjectCard
+            project={item}
+            onPress={() => navigation.navigate('ProjectDetail', { project: item, userId })}
+          />
+        </View>
+      );
+    }
     return (
       <View style={{ paddingHorizontal: spacing.lg }}>
         <AscentCard
@@ -79,7 +107,10 @@ export default function LogbookScreen({ route, navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.bgCard }]} edges={['top']}>
       <FlatList
-        data={filtered}
+        data={activeTab === 'logbook' 
+          ? filtered 
+          : projects.filter(p => p.status === projectTab)
+        }
         keyExtractor={item => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
@@ -105,6 +136,7 @@ export default function LogbookScreen({ route, navigation }) {
                 }
               />
               </View>
+              {activeTab === 'logbook' && (
               <View style={{ backgroundColor: palette.bg, paddingTop: spacing.md }}>
                 <View style={styles.searchBar}>
                   <Text style={styles.searchIcon}>🔍</Text>
@@ -115,28 +147,85 @@ export default function LogbookScreen({ route, navigation }) {
                     value={search}
                     onChangeText={setSearch}
                   />
+                </View>
               </View>
+            )}
+
+            {/* Onglets Logbook / Projets */}
+            <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: palette.bg }}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'logbook' && styles.tabActive]}
+                onPress={() => setActiveTab('logbook')}
+              >
+                <Text style={[styles.tabText, activeTab === 'logbook' && styles.tabTextActive]}>📋 Logbook</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'projets' && styles.tabActive]}
+                onPress={() => setActiveTab('projets')}
+              >
+                <Text style={[styles.tabText, activeTab === 'projets' && styles.tabTextActive]}>
+                  🎯 Projets {projects.filter(p => p.status === 'en_cours').length > 0 && `(${projects.filter(p => p.status === 'en_cours').length})`}
+                </Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Filtres */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterList}
-              style={{ marginBottom: spacing.sm, height: 60 }}
-            >
-              {TYPE_FILTERS.map(item => (
-                <TouchableOpacity
-                  key={item}
-                  style={[styles.chip, filter === item && styles.chipActive]}
-                  onPress={() => setFilter(item)}
-                >
-                  <Text style={[styles.chipText, filter === item && styles.chipTextActive]}>
-                    {item}
+            {/* Sous-onglets projets — visibles uniquement sur l'onglet Projets */}
+            {activeTab === 'projets' && (
+              <View style={{ backgroundColor: palette.bg, paddingBottom: spacing.sm }}>
+                
+                {/* Ligne 1 : titre + bouton ajouter */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm }}>
+                  <Text style={{ fontSize: typography.xl, fontWeight: typography.black, color: palette.textPrimary }}>
+                    Mes projets
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  <TouchableOpacity
+                    style={styles.addProjectBtn}
+                    onPress={() => navigation.navigate('AddProject', { userId })}
+                  >
+                    <Text style={{ color: '#fff', fontSize: 18 }}>＋</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Ligne 2 : sous-onglets avec fond commun */}
+                <View style={{ flexDirection: 'row', backgroundColor: palette.bgInput, borderRadius: radius.md, marginHorizontal: spacing.lg, padding: 3 }}>
+                  {['en_cours', 'reussi', 'abandonne'].map(tab => (
+                    <TouchableOpacity
+                      key={tab}
+                      style={[styles.subTab, projectTab === tab && styles.subTabActive]}
+                      onPress={() => setProjectTab(tab)}
+                    >
+                      <Text style={[styles.subTabText, projectTab === tab && styles.subTabTextActive]}>
+                        {tab === 'en_cours'  ? 'En cours' :
+                        tab === 'reussi'    ? 'Réussis' :
+                        'Abandonnés'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Filtres — uniquement sur l'onglet Logbook */}
+            {activeTab === 'logbook' && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.filterList}
+                style={{ marginBottom: spacing.sm, height: 60 }}
+              >
+                {TYPE_FILTERS.map(item => (
+                  <TouchableOpacity
+                    key={item}
+                    style={[styles.chip, filter === item && styles.chipActive]}
+                    onPress={() => setFilter(item)}
+                  >
+                    <Text style={[styles.chipText, filter === item && styles.chipTextActive]}>
+                      {item}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
 
             {/* Empty state */}
             {!loading && filtered.length === 0 && (
@@ -368,6 +457,64 @@ function makeStyles(palette) {
       fontSize:  typography.sm,
       color:     palette.textSecondary,
       textAlign: 'center',
+    },
+    tab: {
+      flex:              1,
+      paddingVertical:   spacing.sm,
+      borderRadius:      radius.md,
+      borderWidth:       1.5,
+      borderColor:       palette.border,
+      backgroundColor:   palette.bgInput,
+      alignItems:        'center',
+    },
+    tabActive: {
+      backgroundColor: palette.bgCard,
+      borderColor:     colors.accent,
+    },
+    tabText: {
+      fontSize:   typography.sm,
+      fontWeight: typography.semibold,
+      color:      palette.textMuted,
+    },
+    tabTextActive: {
+      color: palette.textPrimary,
+    },
+    subTab: {
+      flex:            1,
+      paddingVertical: spacing.md,
+      borderRadius:    radius.sm,
+      backgroundColor: 'transparent',
+      alignItems:      'center',
+      justifyContent:  'center',
+    },
+    subTabActive: {
+      backgroundColor: palette.bgCard,
+      borderRadius:    radius.sm,
+    },
+    subTabText: {
+      fontSize:   typography.sm,
+      fontWeight: typography.semibold,
+      color:      palette.textMuted,
+    },
+    subTabTextActive: {
+      color: palette.textPrimary,
+      fontWeight: typography.bold
+    },
+    addProjectBtn: {
+      width:           36,
+      height:          36,
+      borderRadius:    18,
+      backgroundColor: colors.accent,
+      alignItems:      'center',
+      justifyContent:  'center',
+    },
+    subTabsContainer: {
+      flexDirection:     'row',
+      backgroundColor:   palette.bgInput, // fond commun
+      borderRadius:      radius.md,
+      padding:           3, // petit padding pour l'effet "pill"
+      marginHorizontal:  spacing.lg,
+      marginBottom:      spacing.sm,
     },
   });
 }
