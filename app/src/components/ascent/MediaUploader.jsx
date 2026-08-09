@@ -9,7 +9,7 @@ import { colors, typography, spacing, radius } from '../../theme';
 import { uploadMedia } from '../../../lib/storage';
 import { useTheme } from '../../theme/ThemeContext';
 
-export default function MediaUploader({ userId, mediaList = [], onChange }) {
+export default function MediaUploader({ userId, mediaList = [], onChange, onMediaPress }) {
   const [uploading, setUploading] = useState(false);
 
   const { palette } = useTheme();
@@ -113,11 +113,13 @@ export default function MediaUploader({ userId, mediaList = [], onChange }) {
           {mediaList.map((m, i) => (
             <View key={i} style={styles.preview}>
               {m.type === 'photo' ? (
-                // Photo — affiche l'image uploadée
-                <Image source={{ uri: m.url }} style={styles.previewImg} />
+                // Photo — tap pour ouvrir la lightbox
+                <TouchableOpacity onPress={() => onMediaPress?.({ url: m.url, type: 'photo' })}>
+                  <Image source={{ uri: m.url }} style={styles.previewImg} />
+                </TouchableOpacity>
               ) : (
-                // Vidéo — affiche la miniature avec icône play
-                <View style={styles.videoPreview}>
+                // Vidéo — tap pour lancer le lecteur
+                <TouchableOpacity onPress={() => onMediaPress?.({ url: m.url, type: 'video' })} style={styles.videoPreview}>
                   {m.thumbnailUri
                     ? <Image source={{ uri: m.thumbnailUri }} style={styles.previewImg} />
                     : <Text style={{ fontSize: 24 }}>🎥</Text>
@@ -125,7 +127,7 @@ export default function MediaUploader({ userId, mediaList = [], onChange }) {
                   <View style={styles.playIcon}>
                     <Text style={{ color: '#fff', fontSize: 14 }}>▶</Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               )}
               {/* Bouton suppression */}
               <TouchableOpacity style={styles.removeBtn} onPress={() => removeMedia(i)}>
@@ -135,6 +137,7 @@ export default function MediaUploader({ userId, mediaList = [], onChange }) {
           ))}
         </ScrollView>
       )}
+        
     </View>
   );
 }

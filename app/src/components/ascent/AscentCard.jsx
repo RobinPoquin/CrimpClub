@@ -3,6 +3,7 @@ import { colors, typography, spacing, radius } from '../../theme';
 import { useState } from 'react';
 import { useTheme } from '../../theme/ThemeContext';
 import VideoPlayer from './VideoPlayer';
+import Lightbox from '../common/Lightbox';
 
 // Couleurs de la barre latérale selon le résultat
 const RESULT_COLORS = {
@@ -129,37 +130,7 @@ export default function AscentCard({ ascent, onMenu }) {
       </View>
 
       {/* Lightbox plein écran */}
-        <Modal
-          visible={!!lightbox}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setLightbox(null)}
-        >
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', alignItems: 'center', justifyContent: 'center' }}>
-            
-            {/* Bouton fermer */}
-            <TouchableOpacity
-              style={{ position: 'absolute', top: 50, right: 20, zIndex: 10, width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}
-              onPress={() => setLightbox(null)}
-            >
-              <Text style={{ color: '#fff', fontSize: 18 }}>✕</Text>
-            </TouchableOpacity>
-
-            {/* Photo */}
-            {lightbox?.type === 'photo' && (
-              <Image
-                source={{ uri: lightbox.url }}
-                style={{ width: '100%', height: '80%' }}
-                resizeMode="contain"
-              />
-            )}
-
-            {/* Vidéo */}
-            {lightbox?.type === 'video' && (
-              <VideoPlayer url={lightbox.url} />
-            )}
-          </View>
-        </Modal>
+      <Lightbox media={lightbox} onClose={() => setLightbox(null)} />
     </View>
   );
 }

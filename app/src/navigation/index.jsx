@@ -11,6 +11,10 @@ import ProfileScreen  from '../screens/profile/ProfileScreen';
 import AddAscentScreen from '../screens/logbook/AddAscentScreen';
 import AddProjectScreen   from '../screens/projects/AddProjectScreen';
 import ProjectDetailScreen from '../screens/projects/ProjectDetailScreen';
+import SettingsScreen    from '../screens/profile/SettingsScreen';
+import GymManagerScreen  from '../screens/profile/GymManagerScreen';
+import SpotManagerScreen from '../screens/profile/SpotManagerScreen';
+import SimCompScreen from '../screens/profile/SimCompScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -69,6 +73,10 @@ export default function Navigation({ user }) {
         <Stack.Screen name="EditAscent" component={AddAscentScreen} />
         <Stack.Screen name="AddProject"     component={AddProjectScreen} />
         <Stack.Screen name="ProjectDetail"  component={ProjectDetailScreen} />
+        <Stack.Screen name="Settings"    component={SettingsScreen} />
+        <Stack.Screen name="GymManager"  component={GymManagerScreen} />
+        <Stack.Screen name="SpotManager" component={SpotManagerScreen} />
+        <Stack.Screen name="SimComp" component={SimCompScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

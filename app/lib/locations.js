@@ -14,19 +14,33 @@ export async function getLocations(userId) {
 // Enregistre un lieu s'il n'existe pas déjà (UNIQUE sur user_id + name)
 export async function saveLocation(userId, name, isOutdoor, types, logoUrl) {
   if (!name?.trim()) return;
-  const { data } = await supabase
+  
+  // Vérifie si le lieu existe déjà
+  const { data: existing } = await supabase
     .from("user_locations")
-    .upsert(
-      { 
-        user_id:    userId, 
-        name:       name.trim(), 
-        is_outdoor: isOutdoor,
-        types:      types || ['bloc', 'diff'],
-        logo_url:   logoUrl || null,
-      },
-      { onConflict: "user_id,name" }
-    ).select().single();
-  return data;
+    .select("id")
+    .eq("user_id", userId)
+    .eq("name", name.trim())
+    .single();
+
+  if (existing) {
+    // Met à jour la ligne existante
+    const { data: updateData, error: updateError } = await supabase
+      .from("user_locations")
+      .update({ types: types || ['bloc', 'diff'], logo_url: logoUrl || null })
+      .eq("id", existing.id)
+      .select()
+
+    return updateData;
+  } else {
+    // Crée une nouvelle ligne
+    const { data } = await supabase
+      .from("user_locations")
+      .insert({ user_id: userId, name: name.trim(), is_outdoor: isOutdoor, types: types || ['bloc', 'diff'], logo_url: logoUrl || null })
+      .select()
+      .single();
+    return data;
+  }
 }
 
 // Supprime un lieu mémorisé
