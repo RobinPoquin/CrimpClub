@@ -106,6 +106,13 @@ export default function LogbookScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.bgCard }]} edges={['top']}>
+      {/* Header */}
+      <Header
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        palette={palette}
+      />
+      <View style={{ height: 1, backgroundColor: palette.border }} />
       <FlatList
         data={activeTab === 'logbook' 
           ? filtered 
@@ -123,33 +130,16 @@ export default function LogbookScreen({ route, navigation }) {
         }
         ListHeaderComponent={
           <View style={{ flex: 1, width: '100%' }}>
-            {/* Header + recherche avec fond commun et bordure en bas */}
-            <View style={{ backgroundColor: palette.bgCard }}>
-              <Header
-                theme={theme}
-                onToggleTheme={toggleTheme}
-                palette={palette}
-                rightComponent={
-                  <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddAscent', { userId })}>
-                    <Text style={styles.addBtnText}>＋</Text>
-                  </TouchableOpacity>
-                }
-              />
-              </View>
-              {activeTab === 'logbook' && (
-              <View style={{ backgroundColor: palette.bg, paddingTop: spacing.md }}>
-                <View style={styles.searchBar}>
-                  <Text style={styles.searchIcon}>🔍</Text>
-                  <TextInput
-                    style={styles.searchInput}
-                    placeholder="Rechercher une voie, un site…"
-                    placeholderTextColor={palette.textMuted}
-                    value={search}
-                    onChangeText={setSearch}
-                  />
-                </View>
-              </View>
-            )}
+
+            {/* Titre + bouton ajout */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: palette.bg }}>
+              <Text style={{ fontSize: typography.xxl, fontWeight: typography.black, color: palette.textPrimary }}>
+                Mon logbook
+              </Text>
+              <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate('AddAscent', { userId })}>
+                <Text style={styles.addBtnText}>＋</Text>
+              </TouchableOpacity>
+            </View>
 
             {/* Onglets Logbook / Projets */}
             <View style={{ flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: spacing.sm, backgroundColor: palette.bg }}>
@@ -168,6 +158,22 @@ export default function LogbookScreen({ route, navigation }) {
                 </Text>
               </TouchableOpacity>
             </View>
+
+            {/* Barre de recherche — uniquement logbook */}
+            {activeTab === 'logbook' && (
+              <View style={{ backgroundColor: palette.bg, paddingTop: spacing.xs }}>
+                <View style={styles.searchBar}>
+                  <Text style={styles.searchIcon}>🔍</Text>
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder="Rechercher une voie, un site…"
+                    placeholderTextColor={palette.textMuted}
+                    value={search}
+                    onChangeText={setSearch}
+                  />
+                </View>
+              </View>
+            )}
 
             {/* Sous-onglets projets — visibles uniquement sur l'onglet Projets */}
             {activeTab === 'projets' && (
@@ -290,8 +296,9 @@ export default function LogbookScreen({ route, navigation }) {
             <TouchableOpacity
               style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.light.border }}
               onPress={() => {
+                const ascent = selectedAscent; // sauvegarde avant de reset
                 setSelectedAscent(null);
-                navigation.navigate('EditAscent', { ascent: selectedAscent, userId });
+                navigation.navigate('EditAscent', { ascent, userId });
               }}
             >
               <Text style={{ fontSize: 20 }}>✏️</Text>

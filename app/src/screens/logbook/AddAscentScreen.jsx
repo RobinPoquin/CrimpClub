@@ -142,35 +142,18 @@ export default function AddAscentScreen({ navigation, route }) {
     setSaving(true);
     try {
       if (isEdit) {
+        // Mode édition — les médias sont déjà uploadés
         await updateAscent(editAscent.id, form);
       } else {
-        await addAscent(userId, form);
+        // Mode ajout — upload des nouveaux médias si nécessaire
+        const uploadedMedia = await Promise.all(
+          form.mediaList.map(async m => {
+            if (m.uploaded) return m;
+            return await uploadMedia(userId, m);
+          })
+        );
+        await addAscent(userId, { ...form, mediaList: uploadedMedia });
       }
-      navigation.goBack();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSave() {
-    if (!form.location.trim()) { setError("Indique la salle ou le site."); return; }
-    setSaving(true);
-    try {
-      const uploadedMedia = await Promise.all(
-        form.mediaList.map(async m => {
-          if (m.uploaded) return m;
-          return await uploadMedia(userId, m);
-        })
-      );
-
-      await addAscent(userId, { ...form, mediaList: uploadedMedia });
-      
-      // Appelle le callback pour recharger le logbook
-      const onAscentAdded = route?.params?.onAscentAdded;
-      if (onAscentAdded) onAscentAdded();
-      
       navigation.goBack();
     } catch (err) {
       setError(err.message);
@@ -199,7 +182,7 @@ export default function AddAscentScreen({ navigation, route }) {
   );
 
   const colorMode = isBloc && !form.outdoor && blocMode === 'color';
-  
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}

@@ -1,4 +1,12 @@
+import * as Linking from "expo-linking";
 import { supabase } from "./supabase";
+
+// Lève une erreur lisible si la réponse Supabase en contient une,
+// sinon renvoie directement les données utiles
+function unwrap({ data, error }) {
+  if (error) throw new Error(error.message || JSON.stringify(error));
+  return data;
+}
 
 // Formate l'objet user Supabase en objet simplifié pour React
 function formatUser(u) {
@@ -14,23 +22,21 @@ function formatUser(u) {
 // Crée un nouveau compte utilisateur
 // displayName est stocké dans user_metadata, un champ JSON libre de Supabase
 export async function signUp({ email, password, displayName }) {
-  const { data, error } = await supabase.auth.signUp({
+  const data = unwrap(await supabase.auth.signUp({
     email,
     password,
     options: { data: { display_name: displayName } },
-  });
-  if (error) throw new Error(error.message);
-  return { id: data.user.id, email: data.user.email, displayName };
+  }));
+  return formatUser(data.user);
 }
 
 // Connecte un utilisateur existant avec email + mot de passe
 export async function signIn({ email, password }) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) throw new Error(error.message);
+  const data = unwrap(await supabase.auth.signInWithPassword({ email, password }));
   return formatUser(data.user);
 }
 
-// Déconnecte l'utilisateur (supprime la session du navigateur)
+// Déconnecte l'utilisateur (supprime la session locale)
 export async function signOut() {
   await supabase.auth.signOut();
 }
@@ -48,11 +54,10 @@ export async function getCurrentUser() {
 }
 
 // Envoie un email de réinitialisation
-// window.location.origin = URL de base (prod ou localhost selon l'environnement)
+// Linking.createURL génère l'URL de redirection adaptée (web, iOS, Android)
 export async function sendPasswordReset(email) {
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password`,
-  });
+  const redirectTo = Linking.createURL("/reset-password");
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) throw new Error(error.message || JSON.stringify(error));
 }
 
@@ -63,8 +68,7 @@ export async function updateProfile({ displayName, email, bio, avatarUrl }) {
   // On n'envoie l'email que s'il est défini pour éviter d'écraser l'email existant
   if (email) updates.email = email;
 
-  const { data, error } = await supabase.auth.updateUser(updates);
-  if (error) throw new Error(error.message);
+  const data = unwrap(await supabase.auth.updateUser(updates));
 
   // Synchronise aussi la table profiles pour le futur système social
   await supabase.from("profiles").upsert({
