@@ -30,6 +30,9 @@ export default function GymManagerScreen({ navigation, route }) {
   const [error, setError]             = useState('');
   const [confirmDelete, setConfirmDelete] = useState(null);
 
+  // Filtre actif : 'all', 'bloc' ou 'diff'
+  const [filter, setFilter] = useState('all');
+
   // Charge les salles au focus
   useFocusEffect(
     useCallback(() => {
@@ -96,8 +99,32 @@ export default function GymManagerScreen({ navigation, route }) {
           <Text style={styles.title}>Mes salles</Text>
         </View>
 
+        {/* Filtres */}
+        <View style={{ flexDirection: 'row', backgroundColor: palette.bgInput, borderRadius: radius.md, margin: spacing.md , marginBottom: spacing.xs, padding: 3, gap: 3 }}>
+          {['all', 'bloc', 'diff'].map(f => (
+            <TouchableOpacity
+              key={f}
+              style={[
+                { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: 'center' },
+                filter === f && { backgroundColor: palette.bgCard }
+              ]}
+              onPress={() => setFilter(f)}
+            >
+              <Text style={{
+                fontSize:   typography.xs,
+                fontWeight: typography.semibold,
+                color:      filter === f ? palette.textPrimary : palette.textMuted,
+              }}>
+                {f === 'all' ? 'Toutes' : f === 'bloc' ? '🧱 Bloc' : '🧗 Diff'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <ScrollView contentContainerStyle={styles.content}>
-          {gyms.map(g => (
+          {gyms
+            .filter(g => filter === 'all' || (g.types || []).includes(filter))
+            .map(g => (
             <View key={g.id} style={styles.gymRow} >
                 {/* Logo ou emoji par défaut */}
                 {g.logoUrl
@@ -107,11 +134,13 @@ export default function GymManagerScreen({ navigation, route }) {
                 <View style={{ flex: 1 }}>
                 <Text style={styles.gymName}>{g.name}</Text>
                 {/* Pastilles de couleurs */}
-                <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-                  {g.colors?.map(c => (
-                    <View key={c.id} style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: c.hex }} />
-                  ))}
-                </View>
+                {(g.types || []).includes('bloc') && g.colors?.length > 0 && (
+                  <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                    {g.colors?.map(c => (
+                      <View key={c.id} style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: c.hex }} />
+                    ))}
+                  </View>
+                )}
               </View>
               <TouchableOpacity
                 style={styles.editBtn}

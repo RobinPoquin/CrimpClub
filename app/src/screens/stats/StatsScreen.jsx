@@ -241,29 +241,17 @@ export default function StatsScreen({ route }) {
     };
   });
 
+  const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   // Niveau moyen Diff ce mois
-  const thisMonthDiff = done.filter(a => {
-    const d = new Date(a.date);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && a.type !== 'Bloc' && !a.colorId;
-  });
-  const avgDiff = thisMonthDiff.length > 0
-    ? pointsToGradeLabel(thisMonthDiff.reduce((s, a) => s + (ascentToPoints(a) || 0), 0) / thisMonthDiff.length)
-    : '-';
+  const thisMonthDiff = done.filter(a => new Date(a.date) >= thirtyDaysAgo && a.type !== 'Bloc' && !a.colorId);
 
   // Niveau moyen Bloc ce mois
-  const thisMonthBloc = done.filter(a => {
-    const d = new Date(a.date);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && a.type === 'Bloc' && !a.colorId;
-  });
+  const thisMonthBloc = done.filter(a => new Date(a.date) >= thirtyDaysAgo && a.type === 'Bloc' && !a.colorId);
 
   // Niveau moyen Bloc couleur ce mois — utilise le système normalisé
-  const thisMonthBlocColor = done.filter(a => {
-    const d = new Date(a.date);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && a.colorId;
-  });
+  const thisMonthBlocColor = done.filter(a => new Date(a.date) >= thirtyDaysAgo && a.colorId);
 
   const avgBlocPct = thisMonthBlocColor.length > 0
     ? topNColorAvg(thisMonthBlocColor, gyms, thisMonthBlocColor.length)
@@ -271,6 +259,10 @@ export default function StatsScreen({ route }) {
 
   const avgBloc = avgBlocPct !== null
     ? `N${pctToColorLevel(avgBlocPct)} · ${['Très facile','Facile','Moyen','Difficile','Très difficile','Élite'][pctToColorLevel(avgBlocPct) - 1]}`
+    : '-';
+
+  const avgDiff = thisMonthDiff.length > 0
+    ? pointsToGradeLabel(thisMonthDiff.reduce((s, a) => s + (ascentToPoints(a) || 0), 0) / thisMonthDiff.length)
     : '-';
 
   return (
@@ -310,8 +302,8 @@ export default function StatsScreen({ route }) {
           <StatCard label="ASCENSIONS"  value={totalAscents} palette={palette} />
           <StatCard label="NIVEAU MAX"  value={maxGrade || '-'} palette={palette} accent />
           <StatCard label="CE MOIS"     value={thisMonth} palette={palette} />
-          <StatCard label="MOY. DIFF (mois)" value={avgDiff} palette={palette} />
-          <StatCard label="MOY. BLOC (mois)" value={avgBloc} palette={palette} small />
+          <StatCard label="MOY. DIFF (30j)" value={avgDiff} palette={palette} />
+          <StatCard label="MOY. BLOC (30j)" value={avgBloc} palette={palette} small />
         </View>
 
         {/* Courbe de progression */}
