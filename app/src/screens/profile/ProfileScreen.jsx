@@ -124,6 +124,12 @@ export default function ProfileScreen({ route, navigation }) {
 
         {/* Menu */}
         <View style={styles.section}>
+          <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Search', { userId })}>
+            <Text style={styles.menuIcon}>🔍</Text>
+            <Text style={styles.menuText}>Rechercher des grimpeurs</Text>
+            <Text style={styles.chevron}>›</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.menuRow} onPress={() => navigation.navigate('Settings', { userId })}>
             <Text style={styles.menuIcon}>⚙️</Text>
             <Text style={styles.menuText}>Paramètres du compte</Text>

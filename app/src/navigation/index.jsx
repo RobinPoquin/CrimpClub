@@ -15,6 +15,8 @@ import SettingsScreen    from '../screens/profile/SettingsScreen';
 import GymManagerScreen  from '../screens/profile/GymManagerScreen';
 import SpotManagerScreen from '../screens/profile/SpotManagerScreen';
 import SimCompScreen from '../screens/profile/SimCompScreen';
+import SearchScreen        from '../screens/social/SearchScreen';
+import PublicProfileScreen from '../screens/social/PublicProfileScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -77,6 +79,8 @@ export default function Navigation({ user }) {
         <Stack.Screen name="GymManager"  component={GymManagerScreen} />
         <Stack.Screen name="SpotManager" component={SpotManagerScreen} />
         <Stack.Screen name="SimComp" component={SimCompScreen} />
+        <Stack.Screen name="Search"        component={SearchScreen} />
+        <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
