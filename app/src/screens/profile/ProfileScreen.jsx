@@ -10,6 +10,7 @@ import { getGyms } from '../../../lib/gyms';
 import { getLocations } from '../../../lib/locations';
 import { canAccessSimcomp } from '../../../lib/simcomp';
 import Header from '../../components/common/Header';
+import { getFollowers, getFollowing } from '../../../lib/social';
 
 export default function ProfileScreen({ route, navigation }) {
   const userId = route?.params?.userId;
@@ -20,6 +21,8 @@ export default function ProfileScreen({ route, navigation }) {
   const [ascents, setAscents]   = useState([]);
   const [gyms, setGyms]         = useState([]);
   const [spots, setSpots]       = useState([]);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
 
   // Charge les données au focus
   useFocusEffect(
@@ -27,14 +30,18 @@ export default function ProfileScreen({ route, navigation }) {
       async function load() {
         const { data: { user: u } } = await supabase.auth.getUser();
         setUser(u);
-        const [a, g, l] = await Promise.all([
+        const [a, g, l, followers, following_list] = await Promise.all([
           getAscents(userId),
           getGyms(userId),
           getLocations(userId),
+          getFollowers(userId),
+          getFollowing(userId),
         ]);
         setAscents(a);
         setGyms(g);
         setSpots(l.filter(loc => loc.is_outdoor));
+        setFollowersCount(followers.length);
+        setFollowingCount(following_list.length);
       }
       load();
     }, [userId])
@@ -62,38 +69,39 @@ export default function ProfileScreen({ route, navigation }) {
 
       <ScrollView style={{ backgroundColor: palette.bg }} contentContainerStyle={styles.content}>
 
-        {/* Avatar + infos */}
+        {/* Avatar + stats */}
         <View style={styles.profileHeader}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarFallback]}>
-              <Text style={styles.initials}>{initials || '?'}</Text>
+          {/* Photo de profil */}
+          {avatarUrl
+            ? <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            : <View style={[styles.avatar, styles.avatarFallback]}>
+                <Text style={styles.initials}>{initials || '?'}</Text>
+              </View>
+          }
+
+          {/* Stats à droite */}
+          <View style={styles.statsRight}>
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{ascents.length}</Text>
+              <Text style={styles.statLabel}>ASCENSIONS</Text>
             </View>
-          )}
-          <View style={{ flex: 1 }}>
-            <Text style={styles.name}>{displayName || 'Grimpeur'}</Text>
-            <Text style={styles.email}>{user?.email}</Text>
-            {user?.user_metadata?.bio && (
-              <Text style={styles.bio}>{user.user_metadata.bio}</Text>
-            )}
+            <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate('FollowersList', { userId, type: 'followers', currentUserId: userId })}>
+              <Text style={styles.statValue}>{followersCount}</Text>
+              <Text style={styles.statLabel}>FOLLOWERS</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.statItem} onPress={() => navigation.navigate('FollowersList', { userId, type: 'following', currentUserId: userId })}>
+              <Text style={styles.statValue}>{followingCount}</Text>
+              <Text style={styles.statLabel}>SUIVI</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Stats rapides */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{ascents.length}</Text>
-            <Text style={styles.statLabel}>ASCENSIONS</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{gyms.length}</Text>
-            <Text style={styles.statLabel}>SALLES</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{spots.length}</Text>
-            <Text style={styles.statLabel}>SITES</Text>
-          </View>
+        {/* Nom + bio */}
+        <View style={styles.bioSection}>
+          <Text style={styles.name}>{displayName || 'Grimpeur'}</Text>
+          {user?.user_metadata?.bio && (
+            <Text style={styles.bio}>{user.user_metadata.bio}</Text>
+          )}
         </View>
 
         {/* 3 dernières ascensions */}
@@ -212,5 +220,49 @@ function makeStyles(palette) {
     chevron:      { fontSize: 18, color: palette.textMuted },
     signOutBtn:   { padding: spacing.md, alignItems: 'center' },
     signOutText:  { fontSize: typography.base, color: colors.danger, fontWeight: typography.semibold },
+    profileHeader: {
+      flexDirection: 'row',
+      alignItems:    'center',
+      gap:           spacing.lg,
+      backgroundColor: palette.bgCard,
+      borderRadius:  radius.lg,
+      padding:       spacing.lg,
+    },
+    statsRight: {
+      flex:          1,
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+    },
+    statItem: {
+      alignItems: 'center',
+    },
+    statValue: {
+      fontSize:   typography.xl,
+      fontWeight: typography.black,
+      color:      palette.textPrimary,
+    },
+    statLabel: {
+      fontSize:     9,
+      fontWeight:   '700',
+      color:        palette.textMuted,
+      letterSpacing: 0.5,
+      marginTop:    2,
+    },
+    bioSection: {
+      backgroundColor: palette.bgCard,
+      borderRadius:    radius.lg,
+      padding:         spacing.lg,
+    },
+    name: {
+      fontSize:   typography.lg,
+      fontWeight: typography.black,
+      color:      palette.textPrimary,
+    },
+    bio: {
+      fontSize:  typography.sm,
+      color:     palette.textSecondary,
+      marginTop: spacing.xs,
+      fontStyle: 'italic',
+    },
   });
 }

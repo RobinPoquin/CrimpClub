@@ -86,3 +86,13 @@ export async function updatePassword(newPassword) {
   const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) throw new Error(error.message);
 }
+
+//Enregistre le Token de notification
+export async function savePushToken ({ userId, pushToken}) {
+  const { error } = await supabase
+  .from("profiles")
+  .update({ expo_push_token: pushToken })
+  .eq("id", userId)
+
+  if (error) throw new Error(error.message || JSON.stringify(error));
+}

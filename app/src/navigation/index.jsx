@@ -17,6 +17,8 @@ import SpotManagerScreen from '../screens/profile/SpotManagerScreen';
 import SimCompScreen from '../screens/profile/SimCompScreen';
 import SearchScreen        from '../screens/social/SearchScreen';
 import PublicProfileScreen from '../screens/social/PublicProfileScreen';
+import FollowersListScreen from '../screens/social/FollowersListScreen';
+import PublicLogbookScreen from '../screens/social/PublicLogbookScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -81,6 +83,8 @@ export default function Navigation({ user }) {
         <Stack.Screen name="SimComp" component={SimCompScreen} />
         <Stack.Screen name="Search"        component={SearchScreen} />
         <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
+        <Stack.Screen name="FollowersList" component={FollowersListScreen} />
+        <Stack.Screen name="PublicLogbook" component={PublicLogbookScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

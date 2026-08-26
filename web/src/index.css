@@ -551,7 +551,14 @@ textarea { resize: vertical; }
   display: flex; flex-direction: column; gap: 4px;
 }
 .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
-.stat-value { font-size: 26px; font-weight: 900; letter-spacing: -1px; }
+.stat-value { 
+  font-size: 26px; 
+  font-weight: 900; 
+  letter-spacing: -1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .stat-value.accent { color: var(--accent); }
 
 .stats-section { padding: 0 16px 20px; }

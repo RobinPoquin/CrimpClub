@@ -1,5 +1,5 @@
 import ProgressionChart from "../components/ProgressionChart";
-import { ascentToPoints, ascentToColorLevel, COLOR_LEVELS, ascentDisplayGrade } from "../lib/gradePoints";
+import { ascentToPoints, ascentToColorLevel, COLOR_LEVELS, ascentDisplayGrade, pointsToGrade } from "../lib/gradePoints";
 
 const ORDER_ROUTE = [
   "3","3+","4","4+","5a","5b","5c",
@@ -29,6 +29,32 @@ export default function StatsPage({ ascents, gyms = [] }) {
     return p > (ascentToPoints(best) ?? -Infinity) ? a : best;
   }, gradedDone[0]);
   const maxGrade = maxAscent ? ascentDisplayGrade(maxAscent).label : "--";
+
+  // Calcul des moyennes sur les 30 derniers jours
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  // Filtre les voies cotées des 30 derniers jours
+  const recentDiff = done.filter(a =>
+    new Date(a.date) >= thirtyDaysAgo && a.type !== 'Bloc' && !a.colorId && ascentToPoints(a) !== null
+  );
+
+  // Filtre les blocs cotés des 30 derniers jours
+  const recentBloc = done.filter(a =>
+    new Date(a.date) >= thirtyDaysAgo && a.type === 'Bloc' && !a.colorId && ascentToPoints(a) !== null
+  );
+
+  // Moyenne des points voies → convertie en cotation
+  const avgDiffPoints = recentDiff.length > 0
+    ? recentDiff.reduce((s, a) => s + ascentToPoints(a), 0) / recentDiff.length
+    : null;
+  const avgDiff = avgDiffPoints ? pointsToGrade(avgDiffPoints) : '--';
+
+  // Moyenne des points blocs → convertie en cotation
+  const avgBlocPoints = recentBloc.length > 0
+    ? recentBloc.reduce((s, a) => s + ascentToPoints(a), 0) / recentBloc.length
+    : null;
+  const avgBloc = avgBlocPoints ? pointsToGrade(avgBlocPoints, true) : '--';
 
   // ── Pyramide voies cotées (intérieur + extérieur) ──
   const routeGradeCountsIn  = {};
@@ -108,12 +134,11 @@ export default function StatsPage({ ascents, gyms = [] }) {
       <div className="page-header"><h1>Statistiques</h1></div>
 
       <div className="stats-grid">
-        <StatCard label="Ascensions" value={total} />
-        <StatCard label="Niveau max"  value={maxGrade} accent />
-        <StatCard label="Ce mois"     value={monthCount} />
-        <StatCard label="Sessions"    value={sessions} />
-        <StatCard label="Extérieur"   value={outdoor} />
-        <StatCard label="Sites"       value={new Set(ascents.map(a => a.location).filter(Boolean)).size} />
+        <StatCard label="Ascensions"    value={total} />
+        <StatCard label="Niveau max"    value={maxGrade} accent />
+        <StatCard label="Ce mois"       value={monthCount} />
+        <StatCard label="Moy. Diff (30j)" value={avgDiff} />
+        <StatCard label="Moy. Bloc (30j)" value={avgBloc} />
       </div>
 
       <ProgressionChart ascents={ascents} gyms={gyms} />
