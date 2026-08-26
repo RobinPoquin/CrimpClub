@@ -7,6 +7,8 @@ import { updateProfile, updatePassword } from '../../../lib/auth';
 import { supabase } from '../../../lib/supabase';
 import { getAscents } from '../../../lib/db';
 import AvatarUploader from '../../components/common/AvatarUploader';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 
 export default function SettingsScreen({ navigation, route }) {
   const userId = route?.params?.userId;
@@ -62,8 +64,48 @@ export default function SettingsScreen({ navigation, route }) {
   }
 
   async function handleExportJSON() {
-    const data = await getAscents(userId);
-    Alert.alert('Export JSON', `${data.length} ascensions prêtes — fonctionnalité complète bientôt disponible.`);
+    try {
+      const ascents = await getAscents(userId);
+      const json = JSON.stringify(ascents, null, 2);
+      const path = FileSystem.cacheDirectory + 'CrimpClubExport.json';
+      await FileSystem.writeAsStringAsync(path, json);
+      await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Exporter le logbook' });
+    } catch (e) {
+      console.log("erreur exportJSON:", e.message);
+    }
+  }
+
+  // Exporte toutes les ascensions au format CSV (compatible Excel/Google Sheets)
+  async function exportCSV() {
+    try {
+      const ascents = await getAscents(userId);
+      //Crée le contenu CSV
+      const headers = ["Date", "Type", "Cotation", "Couleur", "Cotation indicative", "Résultat", "Localisation", "Extérieur ?", "Nom", "Commentaire",];
+      const rows = ascents.map(a => [
+        a.date      || "",
+        a.type      || "",
+        a.grade     || "",
+        a.colorName || "",
+        a.gradeHint || "",
+        a.result    || "",
+        a.location  || "",
+        a.outdoor ? "Oui" : "Non",
+        a.routeName || "",
+        // Échappe les guillemets pour éviter que les virgules cassent le CSV
+        a.comment ? `"${a.comment.replace(/"/g, '""')}"` : "",
+      ]);
+      const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+      
+      //Écrit le fichier sur le téléphone
+      const path = FileSystem.cacheDirectory + 'CrimpClubExport.csv';
+
+      await FileSystem.writeAsStringAsync(path, csv);
+      
+      //Ouvre la feuille de partage
+      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exporter le logbook' });
+    } catch (e) {
+      console.log("erreur exportCSV:", e.message);
+    } 
   }
 
   return (
@@ -148,6 +190,9 @@ export default function SettingsScreen({ navigation, route }) {
             </Text>
             <TouchableOpacity style={styles.btn} onPress={handleExportJSON}>
               <Text style={styles.btnText}>⬇️ Exporter en JSON</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.btn} onPress={exportCSV}>
+              <Text style={styles.btnText}>⬇️ Exporter en CSV</Text>
             </TouchableOpacity>
           </>
         )}

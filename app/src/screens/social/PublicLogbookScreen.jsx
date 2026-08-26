@@ -29,7 +29,6 @@ export default function PublicLogbookScreen({ route, navigation }) {
             setLoading(true);
             try {
                 const ascentsData = await getAscents(profileId);
-                console.log("ascentsData:", ascentsData?.length, "profileId:", profileId);
                 setAscents(ascentsData);
             } finally {
                 setLoading(false);
@@ -39,8 +38,6 @@ export default function PublicLogbookScreen({ route, navigation }) {
         }, [profileId])
     );
 
-    console.log("ascents:", ascents.length);
-    console.log("filtered:", filtered.length, "filter:", filter);
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             {/* Header */}
