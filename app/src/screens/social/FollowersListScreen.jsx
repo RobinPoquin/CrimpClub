@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useTheme } from '../../theme/ThemeContext';
-import { getFollowers, getFollowing, followUser, unfollowUser, isFollowing } from '../../../lib/social';
+import { getFollowers, getFollowing, followUser, unfollowUser, isFollowing, requestFollow, getFollowStatus, cancelFollowRequest } from '../../../lib/social';
 import { supabase } from '../../../lib/supabase';
 
 
@@ -15,7 +15,7 @@ export default function FollowersListScreen({ route, navigation }) {
 
   const [users, setUsers]       = useState([]);
   const [loading, setLoading]   = useState(true);
-  const [following, setFollowing] = useState({});
+  const [followStatus, setFollowStatus] = useState({}); // { userId: 'none' | 'pending' | 'following' }
 
   useFocusEffect(
     useCallback(() => {
@@ -38,7 +38,7 @@ export default function FollowersListScreen({ route, navigation }) {
             // Charge les profils correspondants
             const { data: profiles } = await supabase
             .from('profiles')
-            .select('id, display_name, bio, avatar_url')
+            .select('id, display_name, bio, avatar_url, is_private')
             .in('id', ids);
 
             setUsers(profiles || []);
@@ -46,10 +46,11 @@ export default function FollowersListScreen({ route, navigation }) {
             // Vérifie les follows si on est connecté
             if (currentUserId) {
             const followStatus = {};
+            const statusMap = {};
             await Promise.all((profiles || []).map(async u => {
-                followStatus[u.id] = await isFollowing(currentUserId, u.id);
+              statusMap[u.id] = await getFollowStatus(currentUserId, u.id);
             }));
-            setFollowing(followStatus);
+            setFollowStatus(statusMap);
             }
         } catch (e) {
         } finally {
@@ -61,12 +62,22 @@ export default function FollowersListScreen({ route, navigation }) {
   );
 
   async function handleFollow(targetId) {
-    if (following[targetId]) {
+    const targetProfile = users.find(u => u.id === targetId);
+    if (followStatus[targetId] === 'following') {
       await unfollowUser(currentUserId, targetId);
+      setFollowStatus(s => ({ ...s, [targetId]: 'none' }));
+    } else if (followStatus[targetId] === 'pending') {
+      await cancelFollowRequest(currentUserId, targetId);
+      setFollowStatus(s => ({ ...s, [targetId]: 'none' }));
     } else {
-      await followUser(currentUserId, targetId);
+      if (targetProfile?.is_private) {
+        await requestFollow(currentUserId, targetId);
+        setFollowStatus(s => ({ ...s, [targetId]: 'pending' }));
+      } else {
+        await followUser(currentUserId, targetId);
+        setFollowStatus(s => ({ ...s, [targetId]: 'following' }));
+      }
     }
-    setFollowing(f => ({ ...f, [targetId]: !f[targetId] }));
   }
 
   function renderItem({ item }) {
@@ -101,11 +112,16 @@ export default function FollowersListScreen({ route, navigation }) {
         {/* Bouton follow — pas sur son propre profil */}
         {!isSelf && currentUserId && (
           <TouchableOpacity
-            style={[styles.followBtn, following[item.id] && styles.followingBtn]}
+            style={[styles.followBtn, followStatus[item.id] !== 'none' && styles.followingBtn]}
             onPress={() => handleFollow(item.id)}
           >
-            <Text style={[styles.followBtnText, following[item.id] && styles.followingBtnText]}>
-              {following[item.id] ? 'Suivi' : 'Suivre'}
+            <Text style={[styles.followBtnText, { 
+              color: followStatus[item.id] === 'none' ? '#fff' : palette.textSecondary 
+            }]}>
+              {followStatus[item.id] === 'following' ? 'Suivi' : 
+              followStatus[item.id] === 'pending'   ? '⏳ En attente' : 
+              item.is_private                        ? '❌ Demander' : 
+              'Suivre'}
             </Text>
           </TouchableOpacity>
         )}

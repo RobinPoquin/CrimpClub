@@ -19,6 +19,7 @@ import SearchScreen        from '../screens/social/SearchScreen';
 import PublicProfileScreen from '../screens/social/PublicProfileScreen';
 import FollowersListScreen from '../screens/social/FollowersListScreen';
 import PublicLogbookScreen from '../screens/social/PublicLogbookScreen';
+import NotificationsScreen from '../screens/social/NotificationsScreen';
 
 const Tab   = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -85,6 +86,7 @@ export default function Navigation({ user }) {
         <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
         <Stack.Screen name="FollowersList" component={FollowersListScreen} />
         <Stack.Screen name="PublicLogbook" component={PublicLogbookScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { colors, typography, spacing, radius } from '../../theme';
 import { useTheme } from '../../theme/ThemeContext';
-import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing } from '../../../lib/social';
+import { followUser, unfollowUser, isFollowing, getFollowers, getFollowing, getFollowStatus, requestFollow, cancelFollowRequest } from '../../../lib/social';
 import { ascentToPoints, topNAverage, ascentDisplayGrade, COLOR_LEVELS, pointsToGrade, topNColorAvg, pctToColorLevel } from '../../../lib/gradePoints';
 import { supabase } from '../../../lib/supabase';
 import { getAscents } from '../../../lib/db';
@@ -16,7 +16,7 @@ export default function PublicProfileScreen({ route, navigation }) {
   const styles = makeStyles(palette);
 
   const [profile, setProfile]     = useState(null);
-  const [following, setFollowing] = useState(false);
+  const [followStatus, setFollowStatus] = useState('none'); // 'none' | 'pending' | 'following'
   const [loading, setLoading]     = useState(true);
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
@@ -47,20 +47,22 @@ export default function PublicProfileScreen({ route, navigation }) {
       async function load() {
         setLoading(true);
         try {
-          const [{ data: prof }, followStatus, followers, following_list, ascentsData, gymData] = await Promise.all([
-            supabase.from('profiles').select('id, display_name, bio, avatar_url').eq('id', profileId).single(),
-            isFollowing(userId, profileId),
+          const [{ data: prof }, status, followers, following_list, ascentsData, gymData] = await Promise.all([
+            supabase.from('profiles').select('id, display_name, bio, avatar_url, is_private').eq('id', profileId).single(),
+            getFollowStatus(userId, profileId),
             getFollowers(profileId),
             getFollowing(profileId),
             getAscents(profileId),
             getGyms(profileId),
           ]);
           setProfile(prof);
-          setFollowing(followStatus);
           setFollowersCount(followers.length);
           setFollowingCount(following_list.length);
           setAscents(ascentsData);
+          setAscentsCount(ascentsData.length);
           setGyms(gymData);
+          setProfile(prof);
+          setFollowStatus(status);
         } finally {
           setLoading(false);
         }
@@ -71,23 +73,21 @@ export default function PublicProfileScreen({ route, navigation }) {
 
   // Toggle follow/unfollow
   async function handleFollow() {
-    if (following) {
+    if (followStatus === 'following') {
       await unfollowUser(userId, profileId);
-    } else {
-      await followUser(userId, profileId);
-      await fetch('https://kskzkxsbriatufffsdvh.supabase.co/functions/v1/send-follow-notification', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
-        },        
-        body: JSON.stringify({ 
-          followerId: userId,
-          followingId: profileId,
-        })
-      })
+      setFollowStatus('none');
+    } else if (followStatus === 'pending') {
+      await cancelFollowRequest(userId, profileId);
+      setFollowStatus('none');
+    } else if (followStatus === 'none') {
+      if (profile?.is_private === false) {
+        await followUser(userId, profileId);
+        setFollowStatus('following');
+      } else {
+        await requestFollow(userId, profileId);
+        setFollowStatus('pending');
+      }
     }
-    setFollowing(f => !f);
   }
 
   const initials = profile?.display_name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
@@ -175,161 +175,179 @@ export default function PublicProfileScreen({ route, navigation }) {
 
             {/* Bouton follow */}
             <TouchableOpacity
-            style={[styles.followBtn, following && styles.followingBtn]}
-            onPress={handleFollow}
+              style={[styles.followBtn, followStatus !== 'none' && styles.followingBtn]}
+              onPress={handleFollow}
             >
-              <Text style={[styles.followBtnText, following && styles.followingBtnText]}>
-                  {following ? '✓ Suivi' : '+ Suivre'}
+              <Text style={[styles.followBtnText, followStatus !== 'none' && styles.followingBtnText]}>
+                {followStatus === 'following' ? '✓ Suivi' : 
+                followStatus === 'pending'   ? '⏳ En attente' : 
+                profile?.is_private          ? '❌ Demander à suivre' : 
+                '+ Suivre'}
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Pyramide voies cotées */}
-          {allRouteLabels.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Pyramide — Voies cotées</Text>
-              <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: '#22C55E' }} />
-                  <Text style={{ fontSize: typography.xs, color: palette.textMuted }}>Intérieur</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: '#3B82F6' }} />
-                  <Text style={{ fontSize: typography.xs, color: palette.textMuted }}>Extérieur</Text>
-                </View>
-              </View>
-              {allRouteLabels.map(label => {
-                const inCount  = routeGradeCountsIn[label]  || 0;
-                const outCount = routeGradeCountsOut[label] || 0;
-                const total    = inCount + outCount;
-                const maxCount = Math.max(...allRouteLabels.map(l => (routeGradeCountsIn[l] || 0) + (routeGradeCountsOut[l] || 0)));
-                return (
-                  <View key={label} style={styles.pyrRow}>
-                    <Text style={styles.pyrLabel}>{label}</Text>
-                    <View style={styles.pyrBarWrap}>
-                      {inCount > 0 && (
-                        <View style={[styles.pyrBar, {
-                          width: `${(inCount / maxCount) * 100}%`,
-                          backgroundColor: '#22C55E',
-                          borderRadius: outCount > 0 ? '4px 0 0 4px' : 4,
-                        }]} />
-                      )}
-                      {outCount > 0 && (
-                        <View style={[styles.pyrBar, {
-                          width: `${(outCount / maxCount) * 100}%`,
-                          backgroundColor: '#3B82F6',
-                          borderRadius: inCount > 0 ? '0 4px 4px 0' : 4,
-                        }]} />
-                      )}
-                    </View>
-                    <Text style={styles.pyrCount}>{total}</Text>
-                  </View>
-                );
-              })}
-              <TouchableOpacity
-                style={{ marginTop: spacing.sm }}
-                onPress={() => navigation.navigate('PublicLogbook', { profileId, filter: 'voies' })}
-              >
-                <Text style={{ color: colors.accent, fontWeight: typography.semibold, fontSize: typography.sm }}>
-                  Voir tout →
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
 
-          {/* Pyramide blocs couleur */}
-          {Object.values(colorCounts).some(v => v > 0) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Pyramide — Blocs couleur</Text>
-              <Text style={{ fontSize: typography.xs, color: palette.textMuted, marginBottom: spacing.md }}>
-                Niveaux normalisés sur 6 tranches, comparables entre toutes les salles.
-              </Text>
-              {Object.entries(colorCounts).reverse().map(([level, count]) => {
-                const maxCount = Math.max(...Object.values(colorCounts));
-                const levelColors = {
-                  N1: '#FACC15', N2: '#22C55E', N3: '#3B82F6',
-                  N4: '#EF4444', N5: '#18181B', N6: '#7C3AED',
-                };
-                return (
-                  <View key={level} style={styles.pyrRow}>
-                    <Text style={styles.pyrLabel}>{level}</Text>
-                    <View style={styles.pyrBarWrap}>
-                      <View style={[styles.pyrBar, {
-                        width: maxCount > 0 ? `${(count / maxCount) * 100}%` : '0%',
-                        backgroundColor: levelColors[level],
-                      }]} />
+          {(!profile?.is_private || followStatus === 'following') ? (
+            <>
+              {/* Pyramide voies cotées */}
+              {allRouteLabels.length > 0 && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Pyramide — Voies cotées</Text>
+                  <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.sm }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: '#22C55E' }} />
+                      <Text style={{ fontSize: typography.xs, color: palette.textMuted }}>Intérieur</Text>
                     </View>
-                    <Text style={styles.pyrCount}>{count}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: '#3B82F6' }} />
+                      <Text style={{ fontSize: typography.xs, color: palette.textMuted }}>Extérieur</Text>
+                    </View>
                   </View>
-                );
-              })}
-
-              {/* Légende niveaux couleur */}
-              {Object.values(colorCounts).some(v => v > 0) && (
-                <View style={{ flexDirection: 'column', gap: spacing.xs, marginTop: spacing.sm }}>
-                  {[
-                    { key: 'N1', color: '#FACC15', label: 'Très facile' },
-                    { key: 'N2', color: '#22C55E', label: 'Facile' },
-                    { key: 'N3', color: '#3B82F6', label: 'Moyen' },
-                    { key: 'N4', color: '#EF4444', label: 'Difficile' },
-                    { key: 'N5', color: '#18181B', label: 'Très difficile' },
-                    { key: 'N6', color: '#7C3AED', label: 'Élite' },
-                  ].map(l => (
-                    <View key={l.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: l.color }} />
-                      <Text style={{ fontSize: typography.xs, color: palette.textMuted }}>{l.key} · {l.label}</Text>
-                    </View>
-                  ))}
+                  {allRouteLabels.map(label => {
+                    const inCount  = routeGradeCountsIn[label]  || 0;
+                    const outCount = routeGradeCountsOut[label] || 0;
+                    const total    = inCount + outCount;
+                    const maxCount = Math.max(...allRouteLabels.map(l => (routeGradeCountsIn[l] || 0) + (routeGradeCountsOut[l] || 0)));
+                    return (
+                      <View key={label} style={styles.pyrRow}>
+                        <Text style={styles.pyrLabel}>{label}</Text>
+                        <View style={styles.pyrBarWrap}>
+                          {inCount > 0 && (
+                            <View style={[styles.pyrBar, {
+                              width: `${(inCount / maxCount) * 100}%`,
+                              backgroundColor: '#22C55E',
+                              borderRadius: outCount > 0 ? '4px 0 0 4px' : 4,
+                            }]} />
+                          )}
+                          {outCount > 0 && (
+                            <View style={[styles.pyrBar, {
+                              width: `${(outCount / maxCount) * 100}%`,
+                              backgroundColor: '#3B82F6',
+                              borderRadius: inCount > 0 ? '0 4px 4px 0' : 4,
+                            }]} />
+                          )}
+                        </View>
+                        <Text style={styles.pyrCount}>{total}</Text>
+                      </View>
+                    );
+                  })}
+                  <TouchableOpacity
+                    style={{ marginTop: spacing.sm }}
+                    onPress={() => navigation.navigate('PublicLogbook', { profileId, filter: 'voies' })}
+                  >
+                    <Text style={{ color: colors.accent, fontWeight: typography.semibold, fontSize: typography.sm }}>
+                      Voir tout →
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
+
+              {/* Pyramide blocs couleur */}
+              {Object.values(colorCounts).some(v => v > 0) && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Pyramide — Blocs couleur</Text>
+                  <Text style={{ fontSize: typography.xs, color: palette.textMuted, marginBottom: spacing.md }}>
+                    Niveaux normalisés sur 6 tranches, comparables entre toutes les salles.
+                  </Text>
+                  {Object.entries(colorCounts).reverse().map(([level, count]) => {
+                    const maxCount = Math.max(...Object.values(colorCounts));
+                    const levelColors = {
+                      N1: '#FACC15', N2: '#22C55E', N3: '#3B82F6',
+                      N4: '#EF4444', N5: '#18181B', N6: '#7C3AED',
+                    };
+                    return (
+                      <View key={level} style={styles.pyrRow}>
+                        <Text style={styles.pyrLabel}>{level}</Text>
+                        <View style={styles.pyrBarWrap}>
+                          <View style={[styles.pyrBar, {
+                            width: maxCount > 0 ? `${(count / maxCount) * 100}%` : '0%',
+                            backgroundColor: levelColors[level],
+                          }]} />
+                        </View>
+                        <Text style={styles.pyrCount}>{count}</Text>
+                      </View>
+                    );
+                  })}
+
+                  {/* Légende niveaux couleur */}
+                  {Object.values(colorCounts).some(v => v > 0) && (
+                    <View style={{ flexDirection: 'column', gap: spacing.xs, marginTop: spacing.sm }}>
+                      {[
+                        { key: 'N1', color: '#FACC15', label: 'Très facile' },
+                        { key: 'N2', color: '#22C55E', label: 'Facile' },
+                        { key: 'N3', color: '#3B82F6', label: 'Moyen' },
+                        { key: 'N4', color: '#EF4444', label: 'Difficile' },
+                        { key: 'N5', color: '#18181B', label: 'Très difficile' },
+                        { key: 'N6', color: '#7C3AED', label: 'Élite' },
+                      ].map(l => (
+                        <View key={l.key} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                          <View style={{ width: 10, height: 10, borderRadius: 2, backgroundColor: l.color }} />
+                          <Text style={{ fontSize: typography.xs, color: palette.textMuted }}>{l.key} · {l.label}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                  <TouchableOpacity
+                    style={{ marginTop: spacing.sm }}
+                    onPress={() => navigation.navigate('PublicLogbook', { profileId, filter: 'blocs' })}
+                  >
+                    <Text style={{ color: colors.accent, fontWeight: typography.semibold, fontSize: typography.sm }}>
+                      Voir tout →
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Pyramide par discipline */}
+              <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Par discipline</Text>
+              {(() => {
+                const types = ['Bloc', 'Diff', 'Trad', 'Grande voie', 'Deep water solo'];
+                const counts = types.map(t => ({
+                  type:  t,
+                  count: done.filter(a => a.type === t).length,
+                })).filter(t => t.count > 0);
+                const maxCount = Math.max(...counts.map(t => t.count));
+
+                return (
+                  <View style={{ gap: spacing.sm }}>
+                    {counts.map(({ type, count }) => (
+                      <View key={type} style={styles.pyrRow}>
+                        <Text style={[styles.pyrLabel, { width: 80, fontSize: typography.xs }]}>{type}</Text>
+                        <View style={styles.pyrBarWrap}>
+                          <View style={[styles.pyrBar, {
+                            width: `${(count / maxCount) * 100}%`,
+                            backgroundColor: colors.accent,
+                          }]} />
+                        </View>
+                        <Text style={styles.pyrCount}>{count}</Text>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
               <TouchableOpacity
-                style={{ marginTop: spacing.sm }}
-                onPress={() => navigation.navigate('PublicLogbook', { profileId, filter: 'blocs' })}
-              >
-                <Text style={{ color: colors.accent, fontWeight: typography.semibold, fontSize: typography.sm }}>
-                  Voir tout →
-                </Text>
-              </TouchableOpacity>
+                  style={{ marginTop: spacing.sm }}
+                  onPress={() => navigation.navigate('PublicLogbook', { profileId, filter: 'all' })}
+                >
+                  <Text style={{ color: colors.accent, fontWeight: typography.semibold, fontSize: typography.sm }}>
+                    Voir tout →
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <View style={{ alignItems: 'center', padding: spacing.xl }}>
+              <Text style={{ fontSize: 32, marginBottom: spacing.sm }}>🔒</Text>
+              <Text style={{ fontSize: typography.base, fontWeight: typography.bold, color: palette.textPrimary }}>
+                Ce compte est privé
+              </Text>
+              <Text style={{ fontSize: typography.sm, color: palette.textMuted, marginTop: spacing.xs, textAlign: 'center' }}>
+                Suis ce compte pour voir ses statistiques
+              </Text>
             </View>
           )}
-
-          {/* Pyramide par discipline */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Par discipline</Text>
-            {(() => {
-              const types = ['Bloc', 'Diff', 'Trad', 'Grande voie', 'Deep water solo'];
-              const counts = types.map(t => ({
-                type:  t,
-                count: done.filter(a => a.type === t).length,
-              })).filter(t => t.count > 0);
-              const maxCount = Math.max(...counts.map(t => t.count));
-
-              return (
-                <View style={{ gap: spacing.sm }}>
-                  {counts.map(({ type, count }) => (
-                    <View key={type} style={styles.pyrRow}>
-                      <Text style={[styles.pyrLabel, { width: 80, fontSize: typography.xs }]}>{type}</Text>
-                      <View style={styles.pyrBarWrap}>
-                        <View style={[styles.pyrBar, {
-                          width: `${(count / maxCount) * 100}%`,
-                          backgroundColor: colors.accent,
-                        }]} />
-                      </View>
-                      <Text style={styles.pyrCount}>{count}</Text>
-                    </View>
-                  ))}
-                </View>
-              );
-            })()}
-            <TouchableOpacity
-                style={{ marginTop: spacing.sm }}
-                onPress={() => navigation.navigate('PublicLogbook', { profileId, filter: 'all' })}
-              >
-                <Text style={{ color: colors.accent, fontWeight: typography.semibold, fontSize: typography.sm }}>
-                  Voir tout →
-                </Text>
-              </TouchableOpacity>
-          </View>
         </ScrollView>
     </SafeAreaView>
   );

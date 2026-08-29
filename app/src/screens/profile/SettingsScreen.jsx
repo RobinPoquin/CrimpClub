@@ -9,6 +9,7 @@ import { getAscents } from '../../../lib/db';
 import AvatarUploader from '../../components/common/AvatarUploader';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
+import { Switch } from 'react-native';
 
 export default function SettingsScreen({ navigation, route }) {
   const userId = route?.params?.userId;
@@ -24,22 +25,32 @@ export default function SettingsScreen({ navigation, route }) {
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState('');
   const [success, setSuccess]       = useState('');
+  const [privateIsOn, setPrivateIsOn] = useState(false);
   const [user, setUser] = useState(null);
 
   // Charge les infos user au montage
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user: u } }) => {
-        setUser(u);
-        setDisplayName(u?.user_metadata?.display_name || '');
-        setEmail(u?.email || '');
-        setBio(u?.user_metadata?.bio || '');
-    });
+    async function load() {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      setUser(u);
+      setDisplayName(u?.user_metadata?.display_name || '');
+      setEmail(u?.email || '');
+      setBio(u?.user_metadata?.bio || '');
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_private')
+        .eq('id', u.id)
+        .single();
+      setPrivateIsOn(profile?.is_private || false);
+    }
+    load();
   }, []);
 
   async function handleSaveProfile() {
     setSaving(true); setError(''); setSuccess('');
     try {
-      await updateProfile({ displayName, email, bio });
+      await updateProfile({ displayName, email, bio, isPrivate: privateIsOn});
       setSuccess('Profil mis à jour !');
     } catch (e) {
       setError(e.message);
@@ -160,6 +171,21 @@ export default function SettingsScreen({ navigation, route }) {
 
             <Text style={styles.label}>Bio <Text style={styles.optional}>(optionnel)</Text></Text>
             <TextInput style={[styles.input, { height: 80, textAlignVertical: 'top' }]} value={bio} onChangeText={setBio} multiline placeholderTextColor={palette.textMuted} />
+
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md }}>
+              <View>
+                <Text style={styles.label}>{privateIsOn ? "Compte privé" : "Compte public"}</Text>
+                <Text style={{ fontSize: typography.xs, color: palette.textMuted, marginTop: 2 }}>
+                  {privateIsOn ? "Seuls tes followers voient ton profil" : "Tout le monde peut voir ton profil"}
+                </Text>
+              </View>
+              <Switch
+                value={privateIsOn}
+                onValueChange={v => setPrivateIsOn(v)}
+                trackColor={{ true: colors.accent }}
+                thumbColor="#fff"
+              />
+            </View>
 
             <TouchableOpacity style={[styles.btn, saving && styles.btnDisabled]} onPress={handleSaveProfile} disabled={saving}>
               {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Enregistrer</Text>}

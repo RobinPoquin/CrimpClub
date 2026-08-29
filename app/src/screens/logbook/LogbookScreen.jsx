@@ -111,6 +111,8 @@ export default function LogbookScreen({ route, navigation }) {
         theme={theme}
         onToggleTheme={toggleTheme}
         palette={palette}
+        userId={userId}
+        navigation={navigation}
       />
       <View style={{ height: 1, backgroundColor: palette.border }} />
       <FlatList

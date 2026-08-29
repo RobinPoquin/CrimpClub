@@ -64,7 +64,13 @@ export default function ProfileScreen({ route, navigation }) {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: palette.bgCard }]} edges={['top']}>
-      <Header theme={theme} onToggleTheme={toggleTheme} palette={palette} />
+      <Header 
+        theme={theme} 
+        onToggleTheme={toggleTheme} 
+        palette={palette} 
+        userId={userId}
+        navigation={navigation}
+      />
       <View style={{ height: 1, backgroundColor: palette.border }} />
 
       <ScrollView style={{ backgroundColor: palette.bg }} contentContainerStyle={styles.content}>

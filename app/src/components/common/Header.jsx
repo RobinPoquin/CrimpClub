@@ -1,8 +1,19 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, typography, spacing } from '../../theme';
+import { useState, useEffect } from 'react';
+import { getFollowRequests } from '../../../lib/social';
+import { Ionicons } from '@expo/vector-icons';
 
 // Header réutilisable avec logo CrimpClub et bouton toggle thème
-export default function Header({ onToggleTheme, theme, rightComponent, palette }) {
+export default function Header({ onToggleTheme, theme, rightComponent, palette, userId, navigation }) {
+
+  const [notifCount, setNotifCount] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+    getFollowRequests(userId).then(data => setNotifCount(data.length));
+  }, [userId]);
+
   return (
     <View style={[styles.header, { 
       backgroundColor: palette?.bgCard || colors.light.bgCard,
@@ -18,8 +29,30 @@ export default function Header({ onToggleTheme, theme, rightComponent, palette }
         </Text>
       </View>
 
-      {/* Droite : toggle thème + composant optionnel (ex: bouton +) */}
       <View style={styles.right}>
+        {/* Cloche notifications */}
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications', { userId })}>
+          <View style={{ position: 'relative' }}>
+            <Text style={{ fontSize: 22 }}>
+              <Ionicons name="notifications-outline" size={22} color={palette?.textPrimary} />
+            </Text>
+            {notifCount > 0 && (
+              <View style={{
+                position: 'absolute',
+                top: -4, right: -4,
+                width: 16, height: 16,
+                borderRadius: 8,
+                backgroundColor: colors.danger,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>{notifCount}</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+
+        {/* Droite : toggle thème + composant optionnel (ex: bouton +) */}
         <TouchableOpacity 
           onPress={onToggleTheme}
           style={{
@@ -32,7 +65,10 @@ export default function Header({ onToggleTheme, theme, rightComponent, palette }
             justifyContent:  'center',
           }}
         >
-          <Text style={{ fontSize: 18 }}>{theme === 'light' ? '🌙' : '☀️'}</Text>
+          <Text style={{ fontSize: 18 }}>{theme === 'light' ? 
+            <Ionicons name="moon-outline" size={18} color={palette?.textPrimary} /> : 
+            <Ionicons name="sunny-outline" size={18} color={palette?.textPrimary} />}
+          </Text>
         </TouchableOpacity>
         {rightComponent}
       </View>

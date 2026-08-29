@@ -272,6 +272,8 @@ export default function StatsScreen({ route }) {
         theme={theme}
         onToggleTheme={toggleTheme}
         palette={palette}
+        userId={userId}
+        navigation={navigation}
       />
 
       <ScrollView style={{ backgroundColor: palette.bg }} contentContainerStyle={styles.content}>

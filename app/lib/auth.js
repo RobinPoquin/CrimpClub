@@ -63,8 +63,8 @@ export async function sendPasswordReset(email) {
 
 // Met à jour le profil — deux endroits simultanément :
 // user_metadata (auth Supabase) + table profiles (pour le futur système social)
-export async function updateProfile({ displayName, email, bio, avatarUrl }) {
-  const updates = { data: { display_name: displayName, bio, avatar_url: avatarUrl } };
+export async function updateProfile({ displayName, email, bio, avatarUrl, isPrivate }) {
+  const updates = { data: { display_name: displayName, bio, avatar_url: avatarUrl, isPrivate } };
   // On n'envoie l'email que s'il est défini pour éviter d'écraser l'email existant
   if (email) updates.email = email;
 
@@ -76,6 +76,7 @@ export async function updateProfile({ displayName, email, bio, avatarUrl }) {
     display_name: data.user.user_metadata.display_name,
     bio:          data.user.user_metadata.bio,
     avatar_url:   data.user.user_metadata.avatar_url,
+    is_private:   isPrivate,
   });
 
   return formatUser(data.user);
