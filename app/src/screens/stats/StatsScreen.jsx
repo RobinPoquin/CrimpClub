@@ -19,7 +19,7 @@ const PERIODS = [
   { label: 'Tout',   months: null },
 ];
 
-export default function StatsScreen({ route }) {
+export default function StatsScreen({ route, navigation }) {
   const userId = route?.params?.userId;
   const { palette, toggleTheme, theme } = useTheme();
   const styles = makeStyles(palette);

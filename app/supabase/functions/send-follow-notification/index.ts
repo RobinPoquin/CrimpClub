@@ -1,55 +1,70 @@
-// Setup type definitions for built-in Supabase Runtime APIs
-import { withSupabase, Context } from "https://esm.sh/@supabase/functions-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// This endpoint uses 'publishable' | 'secret' access, apiKey is required.
-// Use publishable for Client-facing, key-validated endpoints
-// Use secret for Server-to-server, internal calls
 export default {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req: Request, ctx: Context) => {
-    // 1. Récupère followerId et followingId depuis la requête
-    const { followerId, followingId } = await req.json();
+  fetch: async (req: Request) => {
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
 
-    // 2. Récupère le token du following
-    const { data: followingData, error : followingError } = await ctx.supabaseAdmin
+    // 1. Récupère les paramètres
+    const { followerId, followingId, type } = await req.json();
+
+    // Le destinataire change selon le type
+    const recipientId = type === 'accepted' ? followerId : followingId;
+    const senderId    = type === 'accepted' ? followingId : followerId;
+
+    // 2. Récupère le token du destinataire
+    const { data: recipientData, error: recipientError } = await supabaseAdmin
       .from("profiles")
       .select('expo_push_token')
-      .eq("id", followingId)
-      .single()
-    if (followingError) throw new Error(followingError.message);
+      .eq("id", recipientId)
+      .single();
+    if (recipientError) throw new Error(recipientError.message);
 
-    // 3. Récupère le display_name du follower
-    const { data: followerData, error: display_nameError } = await ctx.supabaseAdmin
+    // 3. Récupère le display_name de l'expéditeur
+    const { data: senderData, error: senderError } = await supabaseAdmin
       .from("profiles")
       .select('display_name')
-      .eq("id", followerId)
-      .single()
-    if (display_nameError) throw new Error(display_nameError.message);
+      .eq("id", senderId)
+      .single();
+    if (senderError) throw new Error(senderError.message);
 
-    // 4. Envoie la notification
+    // 4. Envoie la notification push
     await fetch('https://exp.host/--/api/v2/push/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        to: followingData.expo_push_token,
-        title: 'Nouveau follower 🧗',
-        body: `${followerData.display_name} a commencé à te suivre`,
+        to: recipientData.expo_push_token,
+        title: type === 'accepted' ? 'Demande acceptée 🎉' : 'Nouveau follower 🧗',
+        body: `${senderData.display_name} ${type === 'accepted' ? 'a accepté ta demande de suivi' : 'a commencé à te suivre'}`,
       })
-    })
-    
-    // 5. Retourne une réponse
-    return Response.json({
-      message: { success: true },
     });
-  }),
+
+    // 5. Insère la notification in-app
+    // Vérifie si une notification similaire existe déjà dans les 24h
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: existing } = await supabaseAdmin
+      .from('notifications')
+      .select('id')
+      .eq('user_id', recipientId)
+      .eq('from_user_id', senderId)
+      .eq('type', type === 'accepted' ? 'follow_accepted' : 'new_follower')
+      .gte('created_at', since)
+      .maybeSingle();
+
+    // N'insère que si pas de notif récente
+    if (!existing) {
+      await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id:      recipientId,
+          type:         type === 'accepted' ? 'follow_accepted' : 'new_follower',
+          from_user_id: senderId,
+        });
+    }
+
+    // 6. Retourne une réponse
+    return Response.json({ message: { success: true } });
+  },
 };
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/send-follow-notification' \
-    --header 'apiKey: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH' \
-    --data '{"name":"Functions"}'
-
-*/

@@ -80,12 +80,27 @@ export default function PublicProfileScreen({ route, navigation }) {
       await cancelFollowRequest(userId, profileId);
       setFollowStatus('none');
     } else if (followStatus === 'none') {
-      if (profile?.is_private === false) {
-        await followUser(userId, profileId);
-        setFollowStatus('following');
-      } else {
+      if (profile?.is_private) {
         await requestFollow(userId, profileId);
         setFollowStatus('pending');
+      } else {
+        await followUser(userId, profileId);
+        setFollowStatus('following');
+
+        // Notification push + in-app
+        const response = await fetch('https://kskzkxsbriatufffsdvh.supabase.co/functions/v1/send-follow-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            followerId: userId,
+            followingId: profileId,
+            type: 'follow',
+          })
+        });
+        const result = await response.json();
       }
     }
   }

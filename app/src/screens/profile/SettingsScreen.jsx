@@ -75,48 +75,41 @@ export default function SettingsScreen({ navigation, route }) {
   }
 
   async function handleExportJSON() {
-    try {
-      const ascents = await getAscents(userId);
-      const json = JSON.stringify(ascents, null, 2);
-      const path = FileSystem.cacheDirectory + 'CrimpClubExport.json';
-      await FileSystem.writeAsStringAsync(path, json);
-      await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Exporter le logbook' });
-    } catch (e) {
-      console.log("erreur exportJSON:", e.message);
-    }
+    const ascents = await getAscents(userId);
+    const json = JSON.stringify(ascents, null, 2);
+    const path = FileSystem.cacheDirectory + 'CrimpClubExport.json';
+    await FileSystem.writeAsStringAsync(path, json);
+    await Sharing.shareAsync(path, { mimeType: 'application/json', dialogTitle: 'Exporter le logbook' });
   }
 
   // Exporte toutes les ascensions au format CSV (compatible Excel/Google Sheets)
   async function exportCSV() {
-    try {
-      const ascents = await getAscents(userId);
-      //Crée le contenu CSV
-      const headers = ["Date", "Type", "Cotation", "Couleur", "Cotation indicative", "Résultat", "Localisation", "Extérieur ?", "Nom", "Commentaire",];
-      const rows = ascents.map(a => [
-        a.date      || "",
-        a.type      || "",
-        a.grade     || "",
-        a.colorName || "",
-        a.gradeHint || "",
-        a.result    || "",
-        a.location  || "",
-        a.outdoor ? "Oui" : "Non",
-        a.routeName || "",
-        // Échappe les guillemets pour éviter que les virgules cassent le CSV
-        a.comment ? `"${a.comment.replace(/"/g, '""')}"` : "",
-      ]);
-      const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const ascents = await getAscents(userId);
+    //Crée le contenu CSV
+    const headers = ["Date", "Type", "Cotation", "Couleur", "Cotation indicative", "Résultat", "Localisation", "Extérieur ?", "Nom", "Commentaire",];
+    const rows = ascents.map(a => [
+      a.date      || "",
+      a.type      || "",
+      a.grade     || "",
+      a.colorName || "",
+      a.gradeHint || "",
+      a.result    || "",
+      a.location  || "",
+      a.outdoor ? "Oui" : "Non",
+      a.routeName || "",
+      // Échappe les guillemets pour éviter que les virgules cassent le CSV
+      a.comment ? `"${a.comment.replace(/"/g, '""')}"` : "",
+    ]);
+    const csv = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
       
-      //Écrit le fichier sur le téléphone
-      const path = FileSystem.cacheDirectory + 'CrimpClubExport.csv';
+    //Écrit le fichier sur le téléphone
+    const path = FileSystem.cacheDirectory + 'CrimpClubExport.csv';
 
-      await FileSystem.writeAsStringAsync(path, csv);
+    await FileSystem.writeAsStringAsync(path, csv);
       
-      //Ouvre la feuille de partage
-      await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exporter le logbook' });
-    } catch (e) {
-      console.log("erreur exportCSV:", e.message);
-    } 
+    //Ouvre la feuille de partage
+    await Sharing.shareAsync(path, { mimeType: 'text/csv', dialogTitle: 'Exporter le logbook' });
+    
   }
 
   return (

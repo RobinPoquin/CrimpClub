@@ -16,7 +16,7 @@ export async function followUser(followerId, followingId) {
   const { error } = await supabase
     .from('follows')
     .insert({ follower_id: followerId, following_id: followingId });
-  if (error) throw new Error(error.message);
+   if (error) throw new Error(error.message);
 }
 
 // Unfollow un grimpeur
@@ -95,11 +95,20 @@ export async function getFollowing(userId) {
 
 // Envoie une demande de follow a un autre utilisateur
 export async function requestFollow(followerId, followingId) {
-  const { data, error } = await supabase
+  // Insère la demande dans follow_requests
+  const { error } = await supabase
     .from('follow_requests')
-    .insert({ requester_id: followerId, requested_id: followingId })
+    .insert({ requester_id: followerId, requested_id: followingId });
   if (error) throw new Error(error.message);
-  return data || [];
+
+  // Insère aussi une notif dans notifications
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id:      followingId,
+      type:         'follow_request',
+      from_user_id: followerId,
+    });
 }
 
 // Annule une demande de follow a un autre utilisateur
@@ -152,4 +161,47 @@ export async function setProfilePublic(userId) {
     .eq('id', userId)
   if (error) throw new Error(error.message);
   return data || [];
+}
+
+// Récupère les notifications de l'utilisateur
+export async function getNotifications(userId) {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  if (error) throw new Error(error.message);
+  if (!data?.length) return [];
+
+  // Charge les profils séparément
+  const userIds = [...new Set(data.map(n => n.from_user_id))];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, display_name, avatar_url')
+    .in('id', userIds);
+
+  const result = data.map(n => ({
+    ...n,
+    from_user: profiles?.find(p => p.id === n.from_user_id) || null,
+  }));
+  return result;
+}
+
+// Supprime une notification
+export async function deleteNotification(notifId) {
+  const { error } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('id', notifId);
+  if (error) throw new Error(error.message);
+}
+
+// Marque toutes les notifications comme lues
+export async function markNotificationsRead(userId) {
+  await supabase
+    .from('notifications')
+    .update({ read: true })
+    .eq('user_id', userId)
+    .eq('read', false);
 }

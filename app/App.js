@@ -10,7 +10,8 @@ import { StatusBar } from 'expo-status-bar';
 import ThemedStatusBar from './src/components/common/ThemedStatusBar';
 import { savePushToken } from './lib/auth';
 import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
+import { NotifProvider } from './src/theme/NotifContext';
+
 
 export default function App() {
   const [user, setUser]       = useState(null);
@@ -18,6 +19,12 @@ export default function App() {
 
   //Retourne le Token de notification
   async function getPushToken () {
+    // Ne pas enregistrer les notifs dans Expo Go
+    if (Constants.appOwnership === 'expo') return null;
+
+    const Notifications = await import('expo-notifications');
+    const Constants2 = await import('expo-constants');
+
     const projectId = Constants?.expoConfig?.extra?.eas?.projectId ?? Constants?.easConfig?.projectId;
     try {
       const pushTokenString = (
@@ -65,10 +72,12 @@ export default function App() {
   // Si connecté → app principale, sinon → auth
   return (
     <ThemeProvider>
-      <SafeAreaProvider>
-        <ThemedStatusBar />
-        {user ? <Navigation user={user} /> : <AuthNavigator />}
-      </SafeAreaProvider>
+      <NotifProvider userId={user?.id}>
+        <SafeAreaProvider>
+          <ThemedStatusBar />
+          {user ? <Navigation user={user} /> : <AuthNavigator />}
+        </SafeAreaProvider>
+      </NotifProvider>
     </ThemeProvider>
   );
 }

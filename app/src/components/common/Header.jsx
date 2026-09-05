@@ -1,18 +1,15 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { colors, typography, spacing } from '../../theme';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getFollowRequests } from '../../../lib/social';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '../../../lib/supabase';
+import { useNotif } from '../../theme/NotifContext';
 
 // Header réutilisable avec logo CrimpClub et bouton toggle thème
 export default function Header({ onToggleTheme, theme, rightComponent, palette, userId, navigation }) {
 
-  const [notifCount, setNotifCount] = useState(0);
-
-  useEffect(() => {
-    if (!userId) return;
-    getFollowRequests(userId).then(data => setNotifCount(data.length));
-  }, [userId]);
+  const { notifCount } = useNotif();
 
   return (
     <View style={[styles.header, { 
